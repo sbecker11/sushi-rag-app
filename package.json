@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "validate:env": "bash scripts/validate-env.sh",
     "check:docker": "node scripts/check-docker.js",
     "check:docker-daemon": "bash scripts/check-docker-daemon.sh",
     "cleanup:docker": "bash scripts/cleanup-docker-containers.sh",

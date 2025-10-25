@@ -12,10 +12,10 @@ dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 const { Pool } = pg;
 
 const pool = new Pool({
-  user: process.env.POSTGRES_USER || 'sushi_rag_user',
+  user: process.env.POSTGRES_USER || 'sushi_rag_app_user',
   host: process.env.POSTGRES_HOST || 'localhost',
-  database: process.env.POSTGRES_DB || 'sushi_rag_orders',
-  password: process.env.POSTGRES_PASSWORD || 'sushi_rag_password',
+  database: process.env.POSTGRES_DB || 'sushi_rag_app_orders',
+  password: process.env.POSTGRES_PASSWORD || 'sushi_rag_app_password',
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
 });
 

@@ -7,7 +7,11 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - 🍱 Browse sushi menu with beautiful UI
 - 🛒 Add items to cart
 - 📦 Place orders
-- 🤖 AI-powered menu recommendations (coming soon)
+- 🤖 **AI-powered chat assistant** with RAG and agentic framework
+- 🔍 **Semantic search** - find items by description, ingredients, dietary preferences
+- 🧠 **Multi-tool AI agent** - autonomous tool selection for complex queries
+- 💬 **Conversational interface** - natural language menu recommendations
+- 🗄️ **Vector database** - ChromaDB for sub-100ms semantic similarity search
 - 🐳 Docker-based development environment
 - ✅ Automatic Docker health checks
 - ⏱️ Performance monitoring (OpenAI & PostgreSQL query timing)
@@ -29,6 +33,112 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 ### Infrastructure
 - Docker & Docker Compose
 - Concurrently for dev workflow
+
+### AI Stack
+- **Vector Database**: ChromaDB for semantic search with cosine similarity
+- **Embeddings**: OpenAI text-embedding-3-small (1536 dimensions)
+- **RAG Pipeline**: LangChain for context retrieval + generation
+- **Agentic Framework**: LangChain OpenAI Functions Agent with custom tools
+- **LLM**: GPT-4 for natural language understanding and generation
+
+## Architecture
+
+### RAG System Architecture
+
+```mermaid
+graph TB
+    subgraph "Frontend"
+        A[User Query] --> B[AI Chat Component]
+        B --> C[HTTP Request]
+    end
+    
+    subgraph "Backend API"
+        C --> D[/api/assistant/chat]
+        D --> E[Agent Service]
+    end
+    
+    subgraph "Agentic Framework"
+        E --> F{OpenAI Functions Agent}
+        F --> G[Tool Selection]
+        G --> H[Tool 1: search_menu]
+        G --> I[Tool 2: get_item_details]
+        G --> J[Tool 3: filter_by_price]
+    end
+    
+    subgraph "RAG Pipeline"
+        H --> K[Generate Query Embedding]
+        K --> L[OpenAI Embeddings API]
+        L --> M[Vector: 1536 dimensions]
+        M --> N[ChromaDB Vector Search]
+        N --> O[Semantic Similarity]
+        O --> P[Top-K Results: ~100ms]
+        P --> Q[Retrieved Context]
+    end
+    
+    subgraph "LLM Generation"
+        Q --> R[Prompt Template]
+        F --> R
+        R --> S[System Prompt + Context + Query]
+        S --> T[GPT-4 API]
+        T --> U[Generated Response]
+    end
+    
+    subgraph "Response Flow"
+        U --> V[Backend Response]
+        V --> W[Frontend Display]
+        W --> X[User sees answer]
+    end
+    
+    style E fill:#e1f5ff
+    style F fill:#fff4e1
+    style N fill:#e8f5e9
+    style T fill:#fce4ec
+    style P fill:#f3e5f5
+```
+
+### Key Components
+
+**1. Vector Store (ChromaDB)**
+- Stores menu items as 1536-dimensional embeddings
+- Enables semantic search: "spicy vegetarian options" matches relevant items
+- Cosine similarity for relevance ranking
+- Sub-100ms query latency
+
+**2. RAG Pipeline**
+- **Retrieval**: Query → Embedding → Vector Search → Top-K documents
+- **Augmentation**: Inject retrieved context into LLM prompt
+- **Generation**: GPT-4 generates response grounded in actual menu data
+
+**3. Agentic Framework**
+- **Autonomous Tool Selection**: Agent decides which tools to call
+- **Function Calling**: GPT-4 generates structured tool invocations
+- **Multi-step Reasoning**: Chains multiple tool calls for complex queries
+- **Context Management**: Maintains conversation history
+
+**4. Example Flow**
+
+```
+User: "Show me spicy vegetarian options under $15"
+
+Step 1: Agent analyzes query
+  → Needs: semantic search + price filter
+
+Step 2: Tool Calls
+  → search_menu("spicy vegetarian")
+  → filter_by_price(15)
+
+Step 3: Vector Search
+  → Generate embedding for "spicy vegetarian"
+  → ChromaDB returns top 5 matches (~80ms)
+  → Filter results by price < $15
+
+Step 4: LLM Response
+  → Context: [Spicy Tofu Roll $12, Veggie Tempura $10...]
+  → GPT-4 synthesizes natural language response
+  → "I found 2 great options for you..."
+
+Total Time: ~2 seconds (including LLM generation)
+```
 
 ## Quick Start
 
@@ -78,13 +188,17 @@ POSTGRES_DB=sushi_rag_orders
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
-# OpenAI Configuration (optional)
+# OpenAI Configuration (required for AI features)
 OPENAI_API_KEY=your_openai_api_key_here
+
+# ChromaDB Configuration (Vector Database)
+CHROMA_HOST=localhost
+CHROMA_PORT=8000
 
 # Frontend URL (for CORS)
 FRONTEND_URL=http://localhost:5173
 
-# Performance Monitoring (optional)
+# Performance Monitoring
 # Set to 'true' to enable performance timing logs, 'false' to disable
 ENABLE_PERFORMANCE_LOGGING=true
 ```
@@ -92,7 +206,10 @@ ENABLE_PERFORMANCE_LOGGING=true
 You can copy from the example:
 ```bash
 cp env.example .env
+# Then edit .env and add your OpenAI API key
 ```
+
+**Note:** AI features require an OpenAI API key. Get one at https://platform.openai.com/api-keys
 
 ## npm Scripts
 
@@ -214,24 +331,42 @@ ENABLE_PERFORMANCE_LOGGING=false
 ```
 sushi-rag-app/
 ├── backend/
-│   ├── config/          # Database configuration
-│   ├── database/        # Database setup scripts
-│   ├── routes/          # API routes (menu, orders)
-│   ├── services/        # Business logic
-│   └── server.js        # Express server
+│   ├── config/
+│   │   └── database.js           # PostgreSQL configuration
+│   ├── database/
+│   │   └── setup.js              # Database initialization
+│   ├── routes/
+│   │   ├── menu.js               # Menu API endpoints
+│   │   ├── orders.js             # Order API endpoints
+│   │   └── assistant.js          # AI assistant API endpoints
+│   ├── services/
+│   │   ├── menuService.js        # Menu & OpenAI integration
+│   │   ├── vectorStore.js        # ChromaDB & embeddings
+│   │   ├── ragService.js         # RAG pipeline
+│   │   └── agentService.js       # LangChain agent & tools
+│   └── server.js                 # Express server + AI initialization
 ├── frontend/
 │   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── App.jsx      # Main app component
-│   │   └── main.jsx     # Entry point
+│   │   ├── components/
+│   │   │   ├── Header.jsx        # App header
+│   │   │   ├── MenuCard.jsx      # Menu item display
+│   │   │   ├── Cart.jsx          # Shopping cart
+│   │   │   ├── OrderForm.jsx     # Checkout form
+│   │   │   └── AIAssistant.jsx   # AI chat interface
+│   │   ├── App.jsx               # Main app component
+│   │   └── main.jsx              # Entry point
 │   └── index.html
-├── docs/                # Documentation
-│   ├── DOCKER_CHECK.md  # Docker check guide
-│   ├── QUICK_START.md   # Quick start guide
+├── docs/                          # Documentation (numbered for order)
+│   ├── 00_QUICK_START.md
+│   ├── 10_AI_STACK_ENHANCEMENT.md
+│   ├── 12_RAG_IMPLEMENTATION_COMPLETE.md
 │   └── ...
 ├── scripts/
-│   └── check-docker.js  # Docker health check script
-└── docker-compose.yml   # Docker services configuration
+│   ├── check-docker.js            # Docker & services health check
+│   ├── check-docker-daemon.sh     # Docker Desktop check
+│   ├── kill-ports.sh              # Port cleanup
+│   └── cleanup-docker-containers.sh
+└── docker-compose.yml             # Docker services (PostgreSQL, ChromaDB)
 ```
 
 ## API Endpoints
@@ -242,7 +377,14 @@ sushi-rag-app/
 
 ### Orders
 - `POST /api/orders` - Create new order
+- `GET /api/orders` - Get all orders
 - `GET /api/orders/:id` - Get order details
+
+### AI Assistant
+- `POST /api/assistant/chat` - Chat with AI agent (multi-tool, agentic)
+- `POST /api/assistant/ask` - Ask RAG-powered question
+- `POST /api/assistant/search` - Semantic search for menu items
+- `GET /api/assistant/status` - Check AI service initialization status
 
 ## Troubleshooting
 
@@ -363,11 +505,23 @@ cd frontend && npm test
 
 ## Documentation
 
-- [Quick Start Guide](docs/QUICK_START.md) - Fast setup guide
-- [Docker Check Guide](docs/DOCKER_CHECK.md) - Docker health check details
-- [AI Stack Enhancement](docs/AI_STACK_ENHANCEMENT.md) - AI features roadmap
-- [Environment Setup](docs/ENV_SETUP.md) - Detailed environment configuration
-- [OpenAI Setup](docs/OPENAI_SETUP.md) - OpenAI integration guide
+### Getting Started
+- [Quick Start Guide](docs/00_QUICK_START.md) - Fast setup guide
+- [Setup Guide](docs/01_SETUP.md) - Detailed installation
+- [Environment Setup](docs/02_ENV_SETUP.md) - Environment variables
+- [OpenAI Setup](docs/04_OPENAI_SETUP.md) - OpenAI API key configuration
+
+### Docker & Infrastructure
+- [Docker Check Guide](docs/05_DOCKER_CHECK.md) - Docker health check details
+- [Automated Startup](docs/07_AUTOMATED_STARTUP.md) - How automated workflow works
+
+### AI Features
+- [AI Stack Enhancement](docs/10_AI_STACK_ENHANCEMENT.md) - AI architecture guide
+- [Implementation Checklist](docs/11_IMPLEMENTATION_CHECKLIST.md) - Step-by-step implementation
+- [RAG Implementation Complete](docs/12_RAG_IMPLEMENTATION_COMPLETE.md) - Full AI feature summary
+
+### Career Development
+- [Resume Updates](docs/14_RESUME_UPDATES.md) - How to leverage this project for your resume
 
 ## Contributing
 

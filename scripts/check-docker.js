@@ -7,7 +7,10 @@ import dotenv from 'dotenv';
 // Load environment variables from .env file (if it exists)
 dotenv.config();
 
-const REQUIRED_SERVICES = [process.env.POSTGRES_CONTAINER || 'sushi-rag-app-postgres'];
+const REQUIRED_SERVICES = [
+  process.env.POSTGRES_CONTAINER || 'sushi-rag-app-postgres',
+  'sushi-rag-app-chromadb'
+];
 const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const YELLOW = '\x1b[33m';

@@ -10,14 +10,16 @@
     "db:setup": "node database/setup.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@langchain/openai": "^1.0.0",
+    "chromadb": "^3.0.17",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "pg": "^8.11.3",
-    "openai": "^4.20.1"
+    "express": "^4.18.2",
+    "langchain": "^1.0.1",
+    "openai": "^4.20.1",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   }
 }
-

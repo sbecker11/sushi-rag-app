@@ -5,6 +5,7 @@ import MenuGrid from './components/MenuGrid';
 import OrderForm from './components/OrderForm';
 import Cart from './components/Cart';
 import OrderSuccess from './components/OrderSuccess';
+import AIAssistant from './components/AIAssistant';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -15,30 +16,29 @@ function App() {
   const [error, setError] = useState(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
-  const [menuType, setMenuType] = useState('live'); // 'live' or 'static'
 
-  // Fetch menu items on component mount and when menuType changes
+  // Fetch menu items on component mount
   useEffect(() => {
     fetchMenu();
-  }, [menuType]);
+  }, []);
 
   const fetchMenu = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/menu?type=${menuType}`);
+      const response = await axios.get(`${API_URL}/api/menu`);
       setMenuItems(response.data);
       setError(null);
     } catch (err) {
       console.error('Error fetching menu:', err);
-      setError('Failed to load menu. Please try again later.');
+      // Show more specific error if API key is not configured
+      if (err.response?.status === 503) {
+        setError(err.response.data.error || 'AI features are not configured. Please set up your OpenAI API key.');
+      } else {
+        setError('Failed to load menu. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleMenuType = () => {
-    const newType = menuType === 'live' ? 'static' : 'live';
-    setMenuType(newType);
   };
 
   // Add item to cart or increase quantity
@@ -119,7 +119,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Header menuType={menuType} onToggleMenu={toggleMenuType} />
+      <Header />
       
       <main className="container mx-auto px-4 py-8">
         {loading ? (
@@ -143,11 +143,9 @@ function App() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold text-gray-800">Our Menu</h2>
                 <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-                  <span className="text-lg">
-                    {menuType === 'live' ? '🤖' : '📋'}
-                  </span>
+                  <span className="text-lg">🤖</span>
                   <span className="text-sm font-semibold text-blue-800">
-                    {menuType === 'live' ? 'AI Generated' : 'Static Menu'}
+                    AI Generated Menu
                   </span>
                 </div>
               </div>
@@ -174,6 +172,9 @@ function App() {
           </div>
         )}
       </main>
+      
+      {/* AI Assistant Chat */}
+      <AIAssistant />
     </div>
   );
 }
