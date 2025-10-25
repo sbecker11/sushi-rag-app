@@ -53,7 +53,7 @@ graph TB
     end
     
     subgraph "Backend API"
-        C --> D[/api/assistant/chat]
+        C --> D["API: /assistant/chat"]
         D --> E[Agent Service]
     end
     
@@ -71,7 +71,7 @@ graph TB
         L --> M[Vector: 1536 dimensions]
         M --> N[ChromaDB Vector Search]
         N --> O[Semantic Similarity]
-        O --> P[Top-K Results: ~100ms]
+        O --> P["Top-K Results: ~100ms"]
         P --> Q[Retrieved Context]
     end
     
