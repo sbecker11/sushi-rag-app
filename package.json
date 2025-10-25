@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "test:local": "bash scripts/test-local.sh",
     "diagram:generate": "bash scripts/generate-diagram.sh",
     "validate:env": "bash scripts/validate-env.sh",
     "check:docker": "node scripts/check-docker.js",
