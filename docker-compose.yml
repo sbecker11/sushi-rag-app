@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${POSTGRES_CONTAINER:-sushi-rag-app-postgres}
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sushi_rag_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sushi_rag_password}
+      POSTGRES_DB: ${POSTGRES_DB:-sushi_rag_orders}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - sushi-rag-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sushi_rag_user} -d ${POSTGRES_DB:-sushi_rag_orders}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sushi-rag-postgres-data:
+

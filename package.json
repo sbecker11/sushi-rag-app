@@ -1,0 +1,41 @@
+{
+  "name": "sushi-rag-app",
+  "version": "1.0.0",
+  "description": "Sushi RAG app - Food ordering web app with AI-powered menu using RAG",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "check:docker": "node scripts/check-docker.js",
+    "check:docker-daemon": "bash scripts/check-docker-daemon.sh",
+    "cleanup:docker": "bash scripts/cleanup-docker-containers.sh",
+    "kill:ports": "bash scripts/kill-ports.sh",
+    "prestart": "npm run kill:ports && npm run check:docker-daemon && npm run docker:up && npm run check:docker",
+    "dev": "npm run prestart && concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "server": "npm run prestart && cd backend && npm run dev",
+    "client": "npm run prestart && cd frontend && npm run dev",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "db:setup": "npm run check:docker && cd backend && npm run db:setup",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:reset": "docker-compose down -v && docker-compose up -d"
+  },
+  "keywords": [
+    "restaurant",
+    "food",
+    "ordering",
+    "llm",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@langchain/openai": "^0.0.14",
+    "chromadb": "^1.7.0",
+    "dotenv": "^16.3.1",
+    "langchain": "^1.0.1",
+    "openai": "^4.20.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
