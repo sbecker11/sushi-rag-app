@@ -46,8 +46,8 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 ### RAG System Architecture
 
 <div align="center">
-  <a href="docs/images/rag-architecture-light.png" target="_blank">
-    <img src="docs/images/rag-architecture-light.png" alt="RAG Architecture Diagram" width="800">
+  <a href="docs/images/rag-architecture-light.png" width="700" target="_blank">
+    <img src="docs/images/rag-architecture-light.png" width="33%" alt="RAG Architecture Diagram">
   </a>
   <p><em>Click to open full-size diagram in new window</em></p>
 </div>
