@@ -45,6 +45,16 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 
 ### RAG System Architecture
 
+<div align="center">
+  <a href="docs/images/rag-architecture-light.png" target="_blank">
+    <img src="docs/images/rag-architecture-light.png" alt="RAG Architecture Diagram" width="800">
+  </a>
+  <p><em>Click to open full-size diagram in new window</em></p>
+</div>
+
+<details>
+<summary>📊 Interactive Mermaid Diagram (click to expand)</summary>
+
 ```mermaid
 graph TB
     subgraph "Frontend"
@@ -95,6 +105,10 @@ graph TB
     style T fill:#fce4ec
     style P fill:#f3e5f5
 ```
+
+</details>
+
+---
 
 ### Key Components
 
