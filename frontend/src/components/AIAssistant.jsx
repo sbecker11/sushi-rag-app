@@ -4,26 +4,33 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function AIAssistant() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: 'Hi! 👋 I\'m your sushi menu assistant. Ask me about our menu items, find dishes by dietary preferences, or get recommendations!'
-    }
-  ]);
+  const initialMessage = {
+    role: 'assistant',
+    content: 'Hi! 👋 I\'m your sushi menu assistant. Ask me about our menu items, find dishes by dietary preferences, or get recommendations!'
+  };
+
+  const [messages, setMessages] = useState([initialMessage]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [aiStatus, setAiStatus] = useState({ agent: false, rag: false, vectorStore: false });
+  const [aiStatus, setAiStatus] = useState({ agent: false, rag: false, vectorStore: false, openAIKeyConfigured: false });
   const messagesEndRef = useRef(null);
 
-  // Check AI status on mount
+  // Check AI status on mount and when chat opens
   useEffect(() => {
     checkAIStatus();
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      checkAIStatus(); // Refresh status when chat opens
+    }
+  }, [isOpen]);
+
   const checkAIStatus = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/assistant/status`);
+      console.log('AI Status received:', response.data);
       setAiStatus(response.data);
     } catch (error) {
       console.error('Error checking AI status:', error);
@@ -32,6 +39,11 @@ function AIAssistant() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const clearConversation = () => {
+    setMessages([initialMessage]);
+    setInput('');
   };
 
   useEffect(() => {
@@ -51,20 +63,15 @@ function AIAssistant() {
     setLoading(true);
 
     try {
-      // Use agent chat endpoint
-      const response = await axios.post(`${API_URL}/api/assistant/chat`, {
-        message: userMessage,
-        history: messages.slice(1).map(msg => ({ // Exclude welcome message
-          role: msg.role,
-          content: msg.content
-        }))
+      // Use RAG Q&A endpoint (agent is disabled)
+      const response = await axios.post(`${API_URL}/api/assistant/ask`, {
+        question: userMessage
       });
 
       // Add assistant response
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: response.data.response,
-        toolsUsed: response.data.toolsUsed
+        content: response.data.answer
       }]);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -107,17 +114,26 @@ function AIAssistant() {
         <div>
           <h3 className="font-bold text-lg">🤖 Sushi Assistant</h3>
           <div className="text-xs text-indigo-100 flex gap-2 mt-1">
-            <span className={aiStatus.agent ? "text-green-300" : "text-red-300"}>
-              {aiStatus.agent ? "● Online" : "● Offline"}
+            <span className={aiStatus.rag ? "text-green-300" : "text-red-300"}>
+              {aiStatus.rag ? "● Online" : "● Offline"}
             </span>
           </div>
         </div>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="text-white hover:text-gray-200 text-2xl font-bold"
-        >
-          ×
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={clearConversation}
+            className="text-white hover:text-gray-200 px-3 py-1 rounded bg-indigo-700 hover:bg-indigo-800 text-sm transition"
+            title="Clear conversation"
+          >
+            🗑️ Clear
+          </button>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-white hover:text-gray-200 text-2xl font-bold"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -186,19 +202,19 @@ function AIAssistant() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about our menu..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            disabled={loading || !aiStatus.agent}
+            disabled={loading || !aiStatus.rag}
           />
           <button
             type="submit"
-            disabled={!input.trim() || loading || !aiStatus.agent}
+            disabled={!input.trim() || loading || !aiStatus.rag}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           >
             {loading ? '...' : '→'}
           </button>
         </div>
-        {!aiStatus.agent && (
+        {!aiStatus.rag && (
           <p className="text-xs text-red-500 mt-2">
-            AI services unavailable. Check backend logs.
+            AI services unavailable. Check backend logs. (RAG: {JSON.stringify(aiStatus.rag)})
           </p>
         )}
       </form>
