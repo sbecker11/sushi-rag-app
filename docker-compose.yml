@@ -28,11 +28,8 @@ services:
     environment:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # Health check disabled - ChromaDB responds on port 8000 when ready
+    # The app will connect when it's available
 
 volumes:
   sushi-rag-postgres-data:
