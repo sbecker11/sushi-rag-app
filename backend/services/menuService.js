@@ -12,6 +12,11 @@ dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 // Only instantiate OpenAI client when needed and if key is available
 let openai = null;
 
+// Menu cache to avoid regenerating on every request
+let menuCache = null;
+let cacheTimestamp = null;
+const CACHE_TTL_MS = parseInt(process.env.MENU_CACHE_TTL_MINUTES || '60') * 60 * 1000; // Default: 60 minutes
+
 function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
     throw new Error('OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.');
@@ -29,9 +34,18 @@ function getOpenAIClient() {
 /**
  * Get menu items using OpenAI LLM
  * Requires OPENAI_API_KEY to be configured
+ * Uses in-memory cache to avoid regenerating on every request
  */
 export async function getMenuFromLLM() {
   try {
+    // Check if we have a valid cached menu
+    const now = Date.now();
+    if (menuCache && cacheTimestamp && (now - cacheTimestamp) < CACHE_TTL_MS) {
+      const cacheAge = Math.round((now - cacheTimestamp) / 1000);
+      console.log(`✅ Returning cached menu (age: ${cacheAge}s, TTL: ${CACHE_TTL_MS/1000}s)`);
+      return menuCache;
+    }
+    
     const client = getOpenAIClient();
     
     console.log('🤖 Calling OpenAI API to generate menu...');
@@ -45,22 +59,27 @@ export async function getMenuFromLLM() {
     );
     
     const apiPromise = client.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "You are a JSON generator. Return ONLY valid JSON, no extra text."
+          content: "You generate complete valid JSON arrays. Return full response, never truncate."
         },
         {
           role: "user",
-          content: `Generate 8 sushi items as a JSON array. Format (compact, no line breaks):
-[{"id":1,"name":"Name","description":"Brief","price":9.99,"image":"https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=300","ingredients":"List","category":"Category","dietary":["type"],"spiceLevel":0}]
+          content: `Generate exactly 8 sushi menu items. Return ONLY a valid JSON array with ALL 8 items, using this format:
 
-Include: rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the JSON.`
+[
+{"id":1,"name":"California Roll","description":"Crab and avocado","price":8.99,"image":"https://picsum.photos/400/300?random=1","ingredients":"Crab, Avocado","category":"Rolls","dietary":["pescatarian"],"spiceLevel":0},
+{"id":2,"name":"Item Name","description":"Short description","price":7.50,"image":"https://picsum.photos/400/300?random=2","ingredients":"Ingredient List","category":"Category","dietary":["type"],"spiceLevel":0},
+...continue for ids 3-8
+]
+
+Requirements: Mix of rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the complete JSON array with all 8 items.`
         }
       ],
-      temperature: 0.7,
-      max_tokens: 2500,
+      temperature: 0.3,
+      max_tokens: 4000,
     });
     
     const response = await Promise.race([apiPromise, timeoutPromise]);
@@ -76,6 +95,17 @@ Include: rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the JSON.`
 
     const content = response.choices[0].message.content;
     
+    // Log response metadata for debugging
+    if (process.env.ENABLE_PERFORMANCE_LOGGING === 'true') {
+      console.log(`📊 Response length: ${content.length} characters`);
+      console.log(`📊 Finish reason: ${response.choices[0].finish_reason}`);
+    }
+    
+    // Check if response was truncated
+    if (response.choices[0].finish_reason === 'length') {
+      console.warn('⚠️  Response was truncated due to max_tokens limit!');
+    }
+    
     // Extract JSON from markdown code blocks if present
     const jsonMatch = content.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/) || content.match(/(\[[\s\S]*?\])/);
     
@@ -88,11 +118,18 @@ Include: rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the JSON.`
           .replace(/(\w+):/g, '"$1":');    // Quote unquoted keys
         
         const menuItems = JSON.parse(jsonString);
-        console.log('✅ Generated menu from OpenAI LLM');
+        
+        // Cache the generated menu
+        menuCache = menuItems;
+        cacheTimestamp = Date.now();
+        console.log(`✅ Generated menu from OpenAI LLM (cached for ${CACHE_TTL_MS/1000}s)`);
+        
         return menuItems;
       } catch (parseError) {
         console.error('❌ JSON parsing error:', parseError.message);
-        console.error('   Raw content:', content.substring(0, 500));
+        console.error('   Full content length:', content.length);
+        console.error('   Raw content (first 1000 chars):', content.substring(0, 1000));
+        console.error('   Raw content (last 200 chars):', content.substring(Math.max(0, content.length - 200)));
         throw new Error('Could not parse JSON from LLM response: ' + parseError.message);
       }
     }
@@ -103,7 +140,13 @@ Include: rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the JSON.`
     if (error.status) console.error('   Status:', error.status);
     if (error.type) console.error('   Type:', error.type);
     
-    // Fallback to simple static menu so app can work
+    // If we have a cached menu from before, return it even if expired
+    if (menuCache) {
+      console.log('⚠️  Returning expired cached menu due to API error');
+      return menuCache;
+    }
+    
+    // Final fallback to simple static menu so app can work
     console.log('ℹ️  Using fallback static menu');
     return [
       {
@@ -196,5 +239,37 @@ Include: rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the JSON.`
       }
     ];
   }
+}
+
+/**
+ * Clear the menu cache
+ * Useful for forcing a fresh menu generation
+ */
+export function clearMenuCache() {
+  menuCache = null;
+  cacheTimestamp = null;
+  console.log('🗑️  Menu cache cleared');
+}
+
+/**
+ * Get cache status
+ * Returns info about current cache state
+ */
+export function getCacheStatus() {
+  if (!menuCache || !cacheTimestamp) {
+    return { cached: false };
+  }
+  
+  const now = Date.now();
+  const age = Math.round((now - cacheTimestamp) / 1000);
+  const ttl = Math.round(CACHE_TTL_MS / 1000);
+  const expired = (now - cacheTimestamp) >= CACHE_TTL_MS;
+  
+  return {
+    cached: true,
+    age,
+    ttl,
+    expired
+  };
 }
 

@@ -7,6 +7,7 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - 🍱 Browse sushi menu with beautiful UI
 - 🛒 Add items to cart
 - 📦 Place orders
+- 💾 **Session storage** - customer information retained across orders for quick reordering
 - 🤖 **AI-powered chat assistant** with RAG and agentic framework
 - 🔍 **Semantic search** - find items by description, ingredients, dietary preferences
 - 🧠 **Multi-tool AI agent** - autonomous tool selection for complex queries
@@ -16,6 +17,33 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - ✅ Automatic Docker health checks
 - ⏱️ Performance monitoring (OpenAI & PostgreSQL query timing)
 
+## Screenshots
+
+<div align="center">
+
+### Browse & Order
+<a href="docs/images/0-pre-order.png" target="_blank">
+  <img src="docs/images/0-pre-order.png" alt="Menu browsing and cart" width="200">
+</a>
+
+*Browse the menu, add items to cart, and view your order summary (click to enlarge)*
+
+### Order Confirmation
+<a href="docs/images/1-order-conf.png" target="_blank">
+  <img src="docs/images/1-order-conf.png" alt="Order confirmation" width="200">
+</a>
+
+*Seamless checkout with customer information saved for future orders (click to enlarge)*
+
+### AI Assistant
+<a href="docs/images/2-ai-assistant.png" target="_blank">
+  <img src="docs/images/2-ai-assistant.png" alt="AI-powered assistant" width="200">
+</a>
+
+*Chat with the AI assistant for personalized menu recommendations and semantic search (click to enlarge)*
+
+</div>
+
 ## Tech Stack
 
 ### Frontend
@@ -23,6 +51,7 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - Vite
 - Tailwind CSS
 - Axios
+- Browser Session Storage (customer data persistence)
 
 ### Backend
 - Node.js
@@ -110,6 +139,69 @@ graph TB
 
 ---
 
+### Order Flow with Session Storage
+
+<details>
+<summary>🛒 Order Flow Diagram (click to expand)</summary>
+
+```mermaid
+graph TB
+    subgraph "User Journey"
+        A[Browse Menu] --> B[Add Items to Cart]
+        B --> C[View Cart]
+        C --> D[Click Place Order]
+    end
+    
+    subgraph "Order Form Component"
+        D --> E{Check Session Storage}
+        E -->|First Time User| F[Empty Form]
+        E -->|Returning User| G[Pre-filled Form]
+        G -->|Load from sessionStorage| H[Name, Phone Auto-filled]
+        
+        F --> I[User Fills Form]
+        H --> J[User Verifies Info]
+        I --> K[Enter Credit Card]
+        J --> K
+    end
+    
+    subgraph "Order Submission"
+        K --> L[Submit Order]
+        L --> M[POST /api/orders]
+        M --> N[PostgreSQL Database]
+        N --> O[Order Saved]
+    end
+    
+    subgraph "Session Storage Update"
+        O --> P[Save to sessionStorage]
+        P --> Q{Save Customer Info}
+        Q -->|Save| R[firstName, lastName, phone]
+        Q -->|Don't Save| S[creditCard - Security]
+        R --> T[sessionStorage.setItem]
+    end
+    
+    subgraph "Next Order"
+        T --> U[Order Confirmation]
+        U --> V[User Adds More Items]
+        V --> D
+    end
+    
+    style E fill:#e1f5ff
+    style P fill:#e8f5e9
+    style S fill:#fce4ec
+    style T fill:#fff4e1
+```
+
+**Key Features:**
+- **First Order**: User enters all information (name, phone, credit card)
+- **Subsequent Orders**: Name and phone are pre-filled from session storage
+- **Security**: Credit card is **never** stored - must be re-entered each time
+- **Session Scope**: Data persists only for current browser session (cleared on tab/browser close)
+- **Privacy First**: Uses `sessionStorage` instead of `localStorage` for better privacy
+
+</details>
+
+---
+
 ### Key Components
 
 **1. Vector Store (ChromaDB)**
@@ -129,7 +221,15 @@ graph TB
 - **Multi-step Reasoning**: Chains multiple tool calls for complex queries
 - **Context Management**: Maintains conversation history
 
-**4. Example Flow**
+**4. Session Storage for Customer Data**
+- **Automatic Persistence**: Customer information (name, phone) saved after first order
+- **Quick Reordering**: Pre-fills form for subsequent orders in same session
+- **Security by Design**: Credit card never stored - must be re-entered
+- **Privacy Conscious**: Uses `sessionStorage` (cleared on browser close) not `localStorage`
+- **Implementation**: React `useEffect` hook loads saved data on component mount
+- **User Experience**: Seamless repeat ordering without re-entering personal info
+
+**5. Example Flow - AI Assistant**
 
 ```
 User: "Show me spicy vegetarian options under $15"
@@ -365,7 +465,7 @@ sushi-rag-app/
 │   │   │   ├── Header.jsx        # App header
 │   │   │   ├── MenuCard.jsx      # Menu item display
 │   │   │   ├── Cart.jsx          # Shopping cart
-│   │   │   ├── OrderForm.jsx     # Checkout form
+│   │   │   ├── OrderForm.jsx     # Checkout form with session storage
 │   │   │   └── AIAssistant.jsx   # AI chat interface
 │   │   ├── App.jsx               # Main app component
 │   │   └── main.jsx              # Entry point

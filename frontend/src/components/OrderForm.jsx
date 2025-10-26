@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function OrderForm({ onSubmit, totalPrice }) {
   const [formData, setFormData] = useState({
@@ -9,6 +9,25 @@ export default function OrderForm({ onSubmit, totalPrice }) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Load saved customer information from sessionStorage on mount
+  useEffect(() => {
+    const savedCustomer = sessionStorage.getItem('customerInfo');
+    if (savedCustomer) {
+      try {
+        const { firstName, lastName, phone } = JSON.parse(savedCustomer);
+        setFormData(prev => ({
+          ...prev,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          phone: phone || ''
+          // Note: Credit card is intentionally NOT saved for security
+        }));
+      } catch (err) {
+        console.error('Failed to load saved customer info:', err);
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,11 +93,22 @@ export default function OrderForm({ onSubmit, totalPrice }) {
     
     try {
       await onSubmit(formData);
+      
+      // Save customer information to sessionStorage for future orders
+      // (excluding credit card for security)
+      const customerInfo = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone
+      };
+      sessionStorage.setItem('customerInfo', JSON.stringify(customerInfo));
+      
+      // Clear the form, keeping saved info for next order
       setFormData({
-        firstName: '',
-        lastName: '',
-        phone: '',
-        creditCard: ''
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        creditCard: '' // Always clear credit card
       });
     } catch (err) {
       setError(err.message || 'Failed to submit order');
