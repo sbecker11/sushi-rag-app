@@ -103,7 +103,50 @@ function App() {
       return true;
     } catch (err) {
       console.error('Error submitting order:', err);
-      throw new Error('Failed to submit order. Please try again.');
+      
+      // Extract detailed error information from the response
+      let errorMessage = 'Failed to submit order. Please try again.';
+      let errorCode = null;
+      let errorField = null;
+      
+      if (err.response?.data) {
+        const errorData = err.response.data;
+        
+        // Use the specific error message from backend
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        
+        // Include error code if available
+        if (errorData.code) {
+          errorCode = errorData.code;
+        }
+        
+        // Include field information if available
+        if (errorData.field) {
+          errorField = errorData.field;
+        }
+        
+        // Add development details if available
+        if (errorData.details && import.meta.env.DEV) {
+          console.error('Error details:', errorData.details);
+        }
+      } else if (err.request) {
+        // Request was made but no response received
+        errorMessage = 'Unable to reach the server. Please check your internet connection and try again.';
+        errorCode = 'NETWORK_ERROR';
+      } else if (err.message) {
+        // Something else went wrong
+        errorMessage = err.message;
+      }
+      
+      // Create error object with additional context
+      const error = new Error(errorMessage);
+      error.code = errorCode;
+      error.field = errorField;
+      error.statusCode = err.response?.status;
+      
+      throw error;
     }
   };
 

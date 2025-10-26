@@ -96,19 +96,111 @@ router.post('/', async (req, res) => {
   try {
     const { firstName, lastName, phone, creditCard, items, totalPrice } = req.body;
     
-    // Validate required fields
-    if (!firstName || !lastName || !phone || !creditCard || !items || items.length === 0) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate required fields with specific messages
+    if (!firstName || !firstName.trim()) {
+      return res.status(400).json({ 
+        error: 'First name is required',
+        field: 'firstName',
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    if (!lastName || !lastName.trim()) {
+      return res.status(400).json({ 
+        error: 'Last name is required',
+        field: 'lastName',
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ 
+        error: 'Phone number is required',
+        field: 'phone',
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    // Validate phone format (must have 10 digits)
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      return res.status(400).json({ 
+        error: 'Phone number must be 10 digits',
+        field: 'phone',
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    if (!creditCard || !creditCard.trim()) {
+      return res.status(400).json({ 
+        error: 'Credit card number is required',
+        field: 'creditCard',
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    // Validate credit card format (13-16 digits)
+    const cardDigits = creditCard.replace(/\D/g, '');
+    if (cardDigits.length < 13 || cardDigits.length > 16) {
+      return res.status(400).json({ 
+        error: 'Credit card number must be 13-16 digits',
+        field: 'creditCard',
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ 
+        error: 'Your cart is empty. Please add items before placing an order.',
+        field: 'items',
+        code: 'VALIDATION_ERROR'
+      });
     }
     
     // Validate items
-    for (const item of items) {
-      if (!item.name || !item.price || !item.quantity) {
-        return res.status(400).json({ error: 'Invalid item data' });
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      if (!item.name || !item.name.trim()) {
+        return res.status(400).json({ 
+          error: `Item #${i + 1} is missing a name`,
+          field: 'items',
+          code: 'VALIDATION_ERROR'
+        });
       }
+      
+      if (!item.price || typeof item.price !== 'number' || item.price <= 0) {
+        return res.status(400).json({ 
+          error: `Item "${item.name}" has an invalid price`,
+          field: 'items',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+      
+      if (!item.quantity || typeof item.quantity !== 'number') {
+        return res.status(400).json({ 
+          error: `Item "${item.name}" has an invalid quantity`,
+          field: 'items',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+      
       if (item.quantity < 1 || item.quantity > 9) {
-        return res.status(400).json({ error: 'Item quantity must be between 1 and 9' });
+        return res.status(400).json({ 
+          error: `Item "${item.name}" quantity must be between 1 and 9`,
+          field: 'items',
+          code: 'VALIDATION_ERROR'
+        });
       }
+    }
+    
+    // Validate total price
+    if (totalPrice === undefined || totalPrice === null || typeof totalPrice !== 'number' || totalPrice < 0) {
+      return res.status(400).json({ 
+        error: 'Invalid total price',
+        field: 'totalPrice',
+        code: 'VALIDATION_ERROR'
+      });
     }
     
     // Start transaction timing
@@ -159,9 +251,87 @@ router.post('/', async (req, res) => {
       items: orderItems
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    // Rollback transaction
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error rolling back transaction:', rollbackError);
+    }
+    
     console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    
+    // Categorize database errors
+    if (error.code) {
+      // PostgreSQL error codes
+      switch (error.code) {
+        case '23505': // Unique violation
+          return res.status(409).json({ 
+            error: 'This order has already been processed. Please check your order history.',
+            code: 'DUPLICATE_ORDER',
+            details: error.detail
+          });
+          
+        case '23503': // Foreign key violation
+          return res.status(400).json({ 
+            error: 'One or more items in your cart are no longer available.',
+            code: 'INVALID_ITEM',
+            details: error.detail
+          });
+          
+        case '23502': // Not null violation
+          return res.status(400).json({ 
+            error: 'Missing required information. Please check all fields.',
+            code: 'MISSING_DATA',
+            field: error.column
+          });
+          
+        case '22P02': // Invalid text representation
+          return res.status(400).json({ 
+            error: 'Invalid data format. Please check your input.',
+            code: 'INVALID_FORMAT',
+            details: error.message
+          });
+          
+        case '53300': // Too many connections
+          return res.status(503).json({ 
+            error: 'Our system is experiencing high traffic. Please try again in a moment.',
+            code: 'SERVICE_BUSY'
+          });
+          
+        case 'ECONNREFUSED':
+        case '08006': // Connection failure
+          return res.status(503).json({ 
+            error: 'Unable to connect to database. Please try again later.',
+            code: 'DATABASE_UNAVAILABLE'
+          });
+          
+        default:
+          console.error('Unhandled database error code:', error.code);
+      }
+    }
+    
+    // Network/connection errors
+    if (error.message && error.message.includes('ECONNREFUSED')) {
+      return res.status(503).json({ 
+        error: 'Database connection failed. Please try again later.',
+        code: 'CONNECTION_ERROR'
+      });
+    }
+    
+    // Timeout errors
+    if (error.message && (error.message.includes('timeout') || error.message.includes('ETIMEDOUT'))) {
+      return res.status(504).json({ 
+        error: 'Order processing is taking too long. Please try again.',
+        code: 'TIMEOUT_ERROR'
+      });
+    }
+    
+    // Generic database error
+    res.status(500).json({ 
+      error: 'Unable to process your order. Please try again or contact support if the problem persists.',
+      code: 'ORDER_FAILED',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   } finally {
     client.release();
   }

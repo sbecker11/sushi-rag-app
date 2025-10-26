@@ -9,19 +9,22 @@ export default function OrderForm({ onSubmit, totalPrice }) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState(null);
+  const [errorField, setErrorField] = useState(null);
 
   // Load saved customer information from sessionStorage on mount
   useEffect(() => {
     const savedCustomer = sessionStorage.getItem('customerInfo');
     if (savedCustomer) {
       try {
-        const { firstName, lastName, phone } = JSON.parse(savedCustomer);
+        const { firstName, lastName, phone, creditCard } = JSON.parse(savedCustomer);
         setFormData(prev => ({
           ...prev,
           firstName: firstName || '',
           lastName: lastName || '',
-          phone: phone || ''
-          // Note: Credit card is intentionally NOT saved for security
+          phone: phone || '',
+          // Only load credit card in development mode
+          creditCard: import.meta.env.DEV ? (creditCard || '') : ''
         }));
       } catch (err) {
         console.error('Failed to load saved customer info:', err);
@@ -84,6 +87,8 @@ export default function OrderForm({ onSubmit, totalPrice }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setErrorCode(null);
+    setErrorField(null);
     
     if (!validateForm()) {
       return;
@@ -95,26 +100,70 @@ export default function OrderForm({ onSubmit, totalPrice }) {
       await onSubmit(formData);
       
       // Save customer information to sessionStorage for future orders
-      // (excluding credit card for security)
       const customerInfo = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone
       };
+      
+      // Only save credit card in development mode for convenience
+      if (import.meta.env.DEV) {
+        customerInfo.creditCard = formData.creditCard;
+      }
+      
       sessionStorage.setItem('customerInfo', JSON.stringify(customerInfo));
       
-      // Clear the form, keeping saved info for next order
-      setFormData({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        creditCard: '' // Always clear credit card
-      });
+      // Clear credit card in production mode after order
+      if (!import.meta.env.DEV) {
+        setFormData(prev => ({
+          ...prev,
+          creditCard: ''
+        }));
+      }
     } catch (err) {
       setError(err.message || 'Failed to submit order');
+      setErrorCode(err.code || null);
+      setErrorField(err.field || null);
+      
+      // Log additional error context in development
+      if (import.meta.env.DEV) {
+        console.error('Order submission error:', {
+          message: err.message,
+          code: err.code,
+          field: err.field,
+          statusCode: err.statusCode
+        });
+      }
     } finally {
       setSubmitting(false);
     }
+  };
+  
+  // Get error icon based on error code
+  const getErrorIcon = () => {
+    if (!errorCode) return '⚠️';
+    
+    switch (errorCode) {
+      case 'VALIDATION_ERROR':
+        return '📝';
+      case 'NETWORK_ERROR':
+      case 'CONNECTION_ERROR':
+        return '🌐';
+      case 'DATABASE_UNAVAILABLE':
+      case 'SERVICE_BUSY':
+        return '🔧';
+      case 'TIMEOUT_ERROR':
+        return '⏱️';
+      case 'DUPLICATE_ORDER':
+        return '🔁';
+      default:
+        return '⚠️';
+    }
+  };
+  
+  // Determine if field has error
+  const hasFieldError = (fieldName) => {
+    return errorField === fieldName;
   };
 
   return (
@@ -125,6 +174,23 @@ export default function OrderForm({ onSubmit, totalPrice }) {
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+            <div className="flex items-start">
+              <span className="text-2xl mr-3 flex-shrink-0">{getErrorIcon()}</span>
+              <div className="flex-1">
+                <p className="font-semibold text-red-800 mb-1">Order Failed</p>
+                <p className="text-sm text-red-700">{error}</p>
+                {errorCode && import.meta.env.DEV && (
+                  <p className="text-xs text-red-600 mt-2 font-mono">
+                    Error Code: {errorCode}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -135,10 +201,13 @@ export default function OrderForm({ onSubmit, totalPrice }) {
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              className="input-field"
+              className={`input-field ${hasFieldError('firstName') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
               placeholder="John"
               required
             />
+            {hasFieldError('firstName') && (
+              <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+            )}
           </div>
           
           <div>
@@ -150,10 +219,13 @@ export default function OrderForm({ onSubmit, totalPrice }) {
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              className="input-field"
+              className={`input-field ${hasFieldError('lastName') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
               placeholder="Doe"
               required
             />
+            {hasFieldError('lastName') && (
+              <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+            )}
           </div>
         </div>
 
@@ -166,10 +238,13 @@ export default function OrderForm({ onSubmit, totalPrice }) {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className="input-field"
+            className={`input-field ${hasFieldError('phone') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
             placeholder="(555) 123-4567"
             required
           />
+          {hasFieldError('phone') && (
+            <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+          )}
         </div>
 
         <div>
@@ -181,20 +256,17 @@ export default function OrderForm({ onSubmit, totalPrice }) {
             name="creditCard"
             value={formData.creditCard}
             onChange={handleChange}
-            className="input-field"
+            className={`input-field ${hasFieldError('creditCard') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
             placeholder="1234 5678 9012 3456"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
             🔒 Secure payment processing
           </p>
+          {hasFieldError('creditCard') && (
+            <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+          )}
         </div>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-            {error}
-          </div>
-        )}
 
         <button
           type="submit"

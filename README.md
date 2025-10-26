@@ -75,11 +75,13 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 ### RAG System Architecture
 
 <div align="center">
-  <a href="docs/images/rag-architecture-light.png" width="700" target="_blank">
-    <img src="docs/images/rag-architecture-light.png" width="33%" alt="RAG Architecture Diagram">
+  <a href="docs/images/rag-architecture-dark.svg" target="_blank">
+    <img src="docs/images/rag-architecture-dark.svg" width="700" alt="RAG Architecture Diagram">
   </a>
   <p><em>Click to open full-size diagram in new window</em></p>
 </div>
+
+> **Note**: This diagram is also available as SVG for presentations and documentation. See `docs/images/rag-architecture-dark.svg`
 
 <details>
 <summary>📊 Interactive Mermaid Diagram (click to expand)</summary>
@@ -229,7 +231,15 @@ graph TB
 - **Implementation**: React `useEffect` hook loads saved data on component mount
 - **User Experience**: Seamless repeat ordering without re-entering personal info
 
-**5. Example Flow - AI Assistant**
+**5. Testing & Quality Assurance**
+- **Comprehensive Test Suite**: 69 tests covering backend and frontend
+- **Backend Validation**: 30 tests for order processing, database errors, edge cases
+- **Frontend Validation**: 39 tests for UI, error handling, session storage
+- **Error Code System**: Validates proper error categorization (📝🌐🔧⏱️🔁⚠️)
+- **CI/CD Ready**: Automated test execution with Jest and Vitest
+- **Coverage**: Success cases, validation errors, database failures, network issues
+
+**6. Example Flow - AI Assistant**
 
 ```
 User: "Show me spicy vegetarian options under $15"
@@ -605,12 +615,177 @@ lsof -ti:5173 | xargs kill -9  # Frontend
 
 ## Testing
 
-```bash
-# Backend tests (when available)
-cd backend && npm test
+### Comprehensive Test Suite ✅
 
-# Frontend tests (when available)
-cd frontend && npm test
+The project includes **69 comprehensive unit tests** covering backend validation, database error handling, and frontend UI/error handling.
+
+<details>
+<summary>🧪 Testing Architecture Diagram (click to expand)</summary>
+
+```mermaid
+graph TB
+    subgraph "Test Runners"
+        A[npm test] --> B[Backend: Jest]
+        A --> C[Frontend: Vitest]
+    end
+    
+    subgraph "Backend Tests - 30 tests"
+        B --> D[Order Validation Tests]
+        D --> D1[✅ Success Cases: 4]
+        D --> D2[❌ Required Fields: 5]
+        D --> D3[❌ Format Errors: 4]
+        D --> D4[❌ Item Validation: 6]
+        
+        B --> E[Database Error Tests]
+        E --> E1[🔧 PostgreSQL Errors: 8]
+        E1 --> E2[Duplicate Orders 409]
+        E1 --> E3[Connection Failures 503]
+        E1 --> E4[Timeouts 504]
+        
+        B --> F[Edge Case Tests: 3]
+    end
+    
+    subgraph "Frontend Tests - 39 tests"
+        C --> G[App.jsx Tests: 12]
+        G --> G1[Error Response Parsing]
+        G --> G2[Network Error Handling]
+        G --> G3[Error Object Structure]
+        
+        C --> H[OrderForm Tests: 27]
+        H --> H1[Form Rendering: 2]
+        H --> H2[Validation: 8]
+        H --> H3[Error Display: 5]
+        H --> H4[Session Storage: 4]
+        H --> H5[Error Icons: 6]
+        H --> H6[Loading States: 2]
+    end
+    
+    subgraph "Test Coverage Areas"
+        D1 --> I[POST /api/orders]
+        D2 --> I
+        D3 --> I
+        D4 --> I
+        E1 --> I
+        F --> I
+        
+        I --> J[Express Routes]
+        J --> K[PostgreSQL Database]
+        
+        G1 --> L[Axios Error Handling]
+        H1 --> M[React Components]
+        H2 --> M
+        H3 --> M
+        H4 --> N[sessionStorage API]
+        
+        L --> M
+        M --> O[User Interface]
+    end
+    
+    subgraph "Error Handling Validation"
+        P[Error Code System]
+        P --> P1[📝 VALIDATION_ERROR]
+        P --> P2[🌐 NETWORK_ERROR]
+        P --> P3[🔧 DATABASE_UNAVAILABLE]
+        P --> P4[⏱️ TIMEOUT_ERROR]
+        P --> P5[🔁 DUPLICATE_ORDER]
+        
+        E1 --> P
+        G1 --> P
+        H5 --> P
+    end
+    
+    style B fill:#e1f5ff
+    style C fill:#fff4e1
+    style I fill:#e8f5e9
+    style P fill:#fce4ec
+    style D1 fill:#c8e6c9
+    style E1 fill:#ffccbc
+```
+
+**Test Distribution:**
+- ✅ **Success Cases**: 8 tests (11.6%) - Valid submissions
+- ❌ **Validation Tests**: 42 tests (60.9%) - Error handling
+- 🎲 **Edge Cases**: 19 tests (27.5%) - Boundary conditions
+
+**Quality Metrics:**
+- **Backend Coverage**: Order validation, database errors, PostgreSQL error codes
+- **Frontend Coverage**: Error display, field highlighting, session storage, loading states
+- **Integration**: Tests verify backend error responses match frontend expectations
+- **Security**: Credit card storage only in DEV mode validated
+
+</details>
+
+---
+
+#### Quick Test Commands
+
+```bash
+# Run all tests (backend + frontend)
+npm test
+
+# Run backend tests only (30 tests)
+npm run test:backend
+
+# Run frontend tests only (39 tests)
+npm run test:frontend
+
+# Watch mode (auto-rerun on changes)
+npm run test:watch
+
+# Generate coverage reports
+npm run test:coverage
+```
+
+#### Test Coverage
+
+| Component | Tests | Coverage |
+|-----------|-------|----------|
+| **Backend API** | 30 | Order validation, database errors, edge cases |
+| **Frontend App** | 12 | Error parsing, network handling |
+| **OrderForm** | 27 | UI validation, session storage, error display |
+| **Total** | **69** | Full order flow with success and failure scenarios |
+
+#### What's Tested
+
+**Backend Tests:**
+- ✅ Valid order submissions
+- ❌ Field validation (required fields, formats)
+- 🔧 Database error handling (8 different scenarios)
+- 📝 Specific error messages with error codes
+- 🎲 Edge cases and boundary conditions
+
+**Frontend Tests:**
+- 🎨 Error message display and field highlighting
+- 🔢 Error icon system (📝🌐🔧⏱️🔁⚠️)
+- 💾 Session storage behavior (DEV vs PROD)
+- ⏳ Loading states and form validation
+- 📞 Phone and credit card formatting
+
+#### Documentation
+
+For detailed test information, see:
+- [Testing Guide](docs/05_TESTING.md) - Complete testing documentation with examples
+- [Test Suite Summary](docs/06_TEST_SUITE_SUMMARY.md) - High-level overview and statistics
+
+#### Example Test Output
+
+```bash
+$ npm run test:backend
+
+ PASS  routes/__tests__/orders.test.js
+  POST /api/orders - Order Validation
+    Success Cases
+      ✓ should create order with valid data
+      ✓ should accept credit card with 13 digits
+    Validation Failures
+      ✓ should reject order without first name
+      ✓ should reject phone with less than 10 digits
+    Database Error Handling
+      ✓ should handle duplicate order error (23505)
+      ✓ should handle connection refused error
+
+Test Suites: 1 passed, 1 total
+Tests:       30 passed, 30 total
 ```
 
 ## Deployment
@@ -620,22 +795,16 @@ cd frontend && npm test
 ## Documentation
 
 ### Getting Started
-- [Quick Start Guide](docs/00_QUICK_START.md) - Fast setup guide
-- [Setup Guide](docs/01_SETUP.md) - Detailed installation
-- [Environment Setup](docs/02_ENV_SETUP.md) - Environment variables
-- [OpenAI Setup](docs/04_OPENAI_SETUP.md) - OpenAI API key configuration
+- [Setup & Configuration Guide](docs/00_SETUP.md) - Complete installation, environment, and OpenAI setup
 
 ### Docker & Infrastructure
-- [Docker Check Guide](docs/05_DOCKER_CHECK.md) - Docker health check details
-- [Automated Startup](docs/07_AUTOMATED_STARTUP.md) - How automated workflow works
+- [Docker Workflow Guide](docs/01_DOCKER_WORKFLOW.md) - Automated startup & health checks
 
-### AI Features
-- [AI Stack Enhancement](docs/10_AI_STACK_ENHANCEMENT.md) - AI architecture guide
-- [Implementation Checklist](docs/11_IMPLEMENTATION_CHECKLIST.md) - Step-by-step implementation
-- [RAG Implementation Complete](docs/12_RAG_IMPLEMENTATION_COMPLETE.md) - Full AI feature summary
+### Testing
+- [Testing Guide](docs/02_TESTING.md) - Complete testing documentation with 69 tests, examples, and best practices
 
-### Career Development
-- [Resume Updates](docs/14_RESUME_UPDATES.md) - How to leverage this project for your resume
+### Archive
+Historical implementation notes and changelogs can be found in [docs/archive/](docs/archive/)
 
 ## Contributing
 
