@@ -11,6 +11,12 @@ export default function OrderForm({ onSubmit, totalPrice }) {
   const [error, setError] = useState('');
   const [errorCode, setErrorCode] = useState(null);
   const [errorField, setErrorField] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    creditCard: ''
+  });
 
   // Load saved customer information from sessionStorage on mount
   useEffect(() => {
@@ -58,42 +64,95 @@ export default function OrderForm({ onSubmit, totalPrice }) {
     
     setFormData({ ...formData, [name]: value });
   };
+  
+  const validateField = (name, value) => {
+    const errors = [];
+    
+    if (name === 'firstName') {
+      if (!value.trim()) errors.push('Required');
+      if (value.trim().length < 2) errors.push('Must be at least 2 characters');
+      if (!/^[a-zA-Z\s'-]+$/.test(value.trim())) errors.push('Invalid characters');
+    }
+    
+    if (name === 'lastName') {
+      if (!value.trim()) errors.push('Required');
+      if (value.trim().length < 2) errors.push('Must be at least 2 characters');
+      if (!/^[a-zA-Z\s'-]+$/.test(value.trim())) errors.push('Invalid characters');
+    }
+    
+    if (name === 'phone') {
+      const digits = value.replace(/\D/g, '');
+      if (!digits) errors.push('Required');
+      if (digits.length !== 10) errors.push('Must be exactly 10 digits');
+      if (!/^[\d\s().-]+$/.test(value)) errors.push('Invalid format');
+    }
+    
+    if (name === 'creditCard') {
+      const digits = value.replace(/\D/g, '');
+      if (!digits) errors.push('Required');
+      if (digits.length < 13 || digits.length > 16) errors.push('Must be 13-16 digits');
+      if (!/^[\d\s]+$/.test(value)) errors.push('Invalid format');
+    }
+    
+    return errors.join(' | ');
+  };
+  
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const errorMessage = validateField(name, value);
+    
+    // Update field-specific error
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: errorMessage
+    }));
+  };
+  
+  const hasAnyErrors = () => {
+    return Object.values(fieldErrors).some(error => error.length > 0);
+  };
 
   const validateForm = () => {
     if (!formData.firstName.trim()) {
-      setError('First name is required');
-      return false;
+      return 'First name is required';
     }
     if (!formData.lastName.trim()) {
-      setError('Last name is required');
-      return false;
+      return 'Last name is required';
     }
     
     const phoneDigits = formData.phone.replace(/\D/g, '');
     if (phoneDigits.length !== 10) {
-      setError('Phone number must be 10 digits');
-      return false;
+      return 'Phone number must be 10 digits';
     }
     
     const cardDigits = formData.creditCard.replace(/\D/g, '');
     if (cardDigits.length < 13 || cardDigits.length > 16) {
-      setError('Credit card number must be 13-16 digits');
-      return false;
+      return 'Credit card number must be 13-16 digits';
     }
     
-    return true;
+    return null;
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setErrorCode(null);
-    setErrorField(null);
     
-    if (!validateForm()) {
+    // Reset submission state
+    setSubmitting(false);
+    
+    // Validate form before submission
+    const validationError = validateForm();
+    
+    if (validationError) {
+      // Set validation error and return
+      setError(validationError);
+      setErrorCode('VALIDATION_ERROR');
       return;
     }
     
+    // Validation passed - clear errors and submit
+    setError('');
+    setErrorCode(null);
+    setErrorField(null);
     setSubmitting(true);
     
     try {
@@ -160,11 +219,6 @@ export default function OrderForm({ onSubmit, totalPrice }) {
         return '⚠️';
     }
   };
-  
-  // Determine if field has error
-  const hasFieldError = (fieldName) => {
-    return errorField === fieldName;
-  };
 
   return (
     <div className="card p-6">
@@ -193,85 +247,93 @@ export default function OrderForm({ onSubmit, totalPrice }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-1">
               First Name
             </label>
             <input
+              id="firstName"
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              className={`input-field ${hasFieldError('firstName') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
+              onBlur={handleBlur}
+              className={`input-field ${fieldErrors.firstName ? 'border-red-500 ring-2 ring-red-200' : ''}`}
               placeholder="John"
               required
             />
-            {hasFieldError('firstName') && (
-              <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+            {fieldErrors.firstName && (
+              <p className="text-xs text-red-600 mt-1">{fieldErrors.firstName}</p>
             )}
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-1">
               Last Name
             </label>
             <input
+              id="lastName"
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              className={`input-field ${hasFieldError('lastName') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
+              onBlur={handleBlur}
+              className={`input-field ${fieldErrors.lastName ? 'border-red-500 ring-2 ring-red-200' : ''}`}
               placeholder="Doe"
               required
             />
-            {hasFieldError('lastName') && (
-              <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+            {fieldErrors.lastName && (
+              <p className="text-xs text-red-600 mt-1">{fieldErrors.lastName}</p>
             )}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-1">
             Phone Number
           </label>
           <input
+            id="phone"
             type="tel"
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className={`input-field ${hasFieldError('phone') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
+            onBlur={handleBlur}
+            className={`input-field ${fieldErrors.phone ? 'border-red-500 ring-2 ring-red-200' : ''}`}
             placeholder="(555) 123-4567"
             required
           />
-          {hasFieldError('phone') && (
-            <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
+          {fieldErrors.phone && (
+            <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label htmlFor="creditCard" className="block text-sm font-semibold text-gray-700 mb-1">
             Credit Card Number
           </label>
           <input
+            id="creditCard"
             type="text"
             name="creditCard"
             value={formData.creditCard}
             onChange={handleChange}
-            className={`input-field ${hasFieldError('creditCard') ? 'border-red-500 ring-2 ring-red-200' : ''}`}
+            onBlur={handleBlur}
+            className={`input-field ${fieldErrors.creditCard ? 'border-red-500 ring-2 ring-red-200' : ''}`}
             placeholder="1234 5678 9012 3456"
             required
           />
+          {fieldErrors.creditCard && (
+            <p className="text-xs text-red-600 mt-1">{fieldErrors.creditCard}</p>
+          )}
           <p className="text-xs text-gray-500 mt-1">
             🔒 Secure payment processing
           </p>
-          {hasFieldError('creditCard') && (
-            <p className="text-xs text-red-600 mt-1">⚠️ Check this field</p>
-          )}
         </div>
 
         <button
           type="submit"
-          disabled={submitting}
-          className="w-full btn-primary text-lg py-3 flex items-center justify-center space-x-2"
+          disabled={submitting || hasAnyErrors()}
+          className="w-full btn-primary text-lg py-3 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? (
             <>
