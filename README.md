@@ -84,13 +84,32 @@ This application has three main feature areas, each with its own architecture di
 This is the main technical diagram showing the complete AI workflow from user query to response, including vector search and LLM generation.
 
 <div align="center">
-  <a href="docs/images/rag-architecture-dark.svg" target="_blank">
-    <img src="docs/images/rag-architecture-dark.svg" width="600" style="max-width: 100%; height: auto;" alt="RAG Architecture Diagram">
+  <a href="docs/images/rag-architecture-dark.png" target="_blank">
+    <img src="docs/images/rag-architecture-dark.png" width="600" style="max-width: 100%; height: auto;" alt="RAG Architecture Diagram">
   </a>
   <p><em>Click to open full-size diagram in new window</em></p>
 </div>
 
-> **Note**: This diagram is also available as SVG for presentations and documentation. See `docs/images/rag-architecture-dark.svg`
+> **Note**: This diagram shows the RAG architecture with readable text rendering.
+
+#### Creating the Architecture Diagram
+
+The `rag-architecture-dark.png` diagram was created from the Mermaid-generated SVG (`rag-architecture-dark.svg`) using the following process:
+
+1. **Source Files**:
+   - `docs/images/rag-architecture-dark.svg` - The source Mermaid SVG diagram
+   - `docs/images/view-svg.html` - HTML viewer for rendering the SVG
+2. **Conversion Process**:
+   - Open the SVG using the HTML viewer in a browser
+   - Use browser "Print to PDF" functionality
+   - Open the PDF in macOS Preview (shows multiple pages/panes)
+   - Remove blank panes and export each visible pane as a separate PNG (e.g., `arch-1.png`, `arch-2.png`, `arch-3.png`)
+   - Combine the PNGs using ImageMagick:
+     ```bash
+     montage arch-1.png arch-2.png arch-3.png -tile 1x3 -geometry +0+0 -background black rag-architecture-dark.png
+     ```
+
+**Why This Approach?** Mermaid SVG diagrams with CSS styling are complex. Converting to a multi-page PDF preserves text rendering, and ImageMagick's `montage` command efficiently combines the exported PNGs into a final diagram.
 
 ---
 

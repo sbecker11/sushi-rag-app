@@ -26,58 +26,25 @@ October 2025 - Present
 
 **Project Description**:
 ```
-Modern full-stack food ordering application showcasing enterprise AI architecture:
 
-🎯 Key Technologies:
-• RAG (Retrieval-Augmented Generation) for context-aware AI responses
-• Vector Database (ChromaDB) with semantic search (<100ms queries)
-• OpenAI GPT-4 + Embeddings (text-embedding-3-small, 1536 dimensions)
-• LangChain Agentic Framework with autonomous tool selection
-• React + Vite + Tailwind CSS (modern frontend)
-• Node.js + Express + PostgreSQL (robust backend)
-• Docker containerization for reproducible environments
-
-✨ Notable Features:
-• AI Chat Assistant with natural language menu search
-• Advanced form validation with onBlur field-level error checking
-• 66 comprehensive unit tests (100% passing - 37 frontend, 29 backend)
-• Semantic search: "spicy vegetarian options" → relevant matches
-• Session storage for seamless repeat orders
-• Real-time validation: consolidated error messages, red borders, smart button disabling
-• Comprehensive error handling with user-friendly messages
-• Automated Docker health checks and startup workflow
-• Performance monitoring for OpenAI & PostgreSQL queries
-
-🏆 Achievements:
-• Production-ready architecture with 100% test coverage
-• Sub-100ms vector similarity search performance
-• Professional documentation with testing guides
-• Enterprise-level validation: required fields, length, format, pattern matching
-• Custom validation system with consolidated error messaging
-
-💼 Technical Skills Demonstrated:
-Full-Stack Development • AI/ML Integration • Vector Databases • REST APIs • 
-Testing (66 tests, 100% pass rate) • Docker • Database Design • Modern JavaScript (ES6+) • 
-React Hooks • Error Handling • Session Management • Form Validation • State Management
 ```
 
 ### Step 3: Upload Architecture Diagram
 
-**Recommended Image**: `docs/images/rag-architecture-dark.svg`
+**Recommended Image**: `docs/images/rag-architecture-dark.png`
 
 **Why This Image**:
 - ✅ Shows technical depth
-- ✅ Professional dark theme
-- ✅ Vector format (crisp at any size)
+- ✅ Professional rendering with readable text
+- ✅ PNG format (compatible everywhere)
 - ✅ Demonstrates system architecture understanding
 
 **Upload Steps**:
 1. Click "Add media" in the project section
-2. Upload: `/Users/sbecker11/workspace-sushi/sushi-rag-app/docs/images/rag-architecture-dark.svg`
+2. Upload: `/Users/sbecker11/workspace-sushi/sushi-rag-app/docs/images/rag-architecture-dark.png`
 3. LinkedIn will display it prominently on your profile
 
-**If SVG Not Supported**:
-LinkedIn typically accepts SVG files. If needed, you can export the SVG to PNG using an image editor or online converter.
+**Note**: LinkedIn accepts PNG files, so this should work without any conversion needed.
 
 ### Step 4: Add Screenshots (Optional)
 
