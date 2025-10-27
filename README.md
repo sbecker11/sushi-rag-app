@@ -8,6 +8,7 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - 🛒 Add items to cart
 - 📦 Place orders
 - 💾 **Session storage** - customer information retained across orders for quick reordering
+- ✨ **Advanced form validation** - onBlur field-level error checking with real-time visual feedback
 - 🤖 **AI-powered chat assistant** with RAG and agentic framework
 - 🔍 **Semantic search** - find items by description, ingredients, dietary preferences
 - 🧠 **Multi-tool AI agent** - autonomous tool selection for complex queries
@@ -185,15 +186,27 @@ graph TB
 - **Implementation**: React `useEffect` hook loads saved data on component mount
 - **User Experience**: Seamless repeat ordering without re-entering personal info
 
-**5. Testing & Quality Assurance**
-- **Comprehensive Test Suite**: 69 tests covering backend and frontend
-- **Backend Validation**: 30 tests for order processing, database errors, edge cases
-- **Frontend Validation**: 39 tests for UI, error handling, session storage
+**5. Advanced Form Validation**
+- **onBlur Validation**: Field-level checking when user exits input (tab or click away)
+- **Consolidated Error Messages**: Multiple validation rules combined into single user-friendly message
+- **Real-time Visual Feedback**: Invalid fields display red border and error text below input
+- **Smart Button Control**: Submit button disabled automatically when any field has errors
+- **Validation Rules**:
+  - Required fields: name, last name, phone (exactly 10 digits), credit card (13-16 digits)
+  - Format checking: phone numbers and credit cards
+  - Length constraints with intelligent error messaging
+- **User Experience**: Immediate feedback without requiring form submission attempt
+- **Implementation**: Custom React validation system with field-level state management
+
+**6. Testing & Quality Assurance**
+- **Comprehensive Test Suite**: 66 tests covering backend and frontend (100% pass rate)
+- **Backend Validation**: 29 tests for order processing, database errors, edge cases
+- **Frontend Validation**: 37 tests for UI, error handling, session storage, onBlur validation
 - **Error Code System**: Validates proper error categorization (📝🌐🔧⏱️🔁⚠️)
 - **CI/CD Ready**: Automated test execution with Jest and Vitest
 - **Coverage**: Success cases, validation errors, database failures, network issues
 
-**6. Example Flow - AI Assistant**
+**7. Example Flow - AI Assistant**
 
 ```
 User: "Show me spicy vegetarian options under $15"
@@ -571,7 +584,7 @@ lsof -ti:5173 | xargs kill -9  # Frontend
 
 ### Testing Architecture
 
-This diagram shows how the comprehensive test suite (69 tests) validates the entire application from backend API to frontend UI.
+This diagram shows how the comprehensive test suite (66 tests, 100% pass rate) validates the entire application from backend API to frontend UI.
 
 <details>
 <summary>🧪 Testing Architecture Diagram (click to expand)</summary>
@@ -583,7 +596,7 @@ graph TB
         A --> C[Frontend: Vitest]
     end
     
-    subgraph "Backend Tests - 30 tests"
+    subgraph "Backend Tests - 29 tests"
         B --> D[Order Validation Tests]
         D --> D1[✅ Success Cases: 4]
         D --> D2[❌ Required Fields: 5]
@@ -599,7 +612,7 @@ graph TB
         B --> F[Edge Case Tests: 3]
     end
     
-    subgraph "Frontend Tests - 39 tests"
+    subgraph "Frontend Tests - 37 tests"
         C --> G[App.jsx Tests: 12]
         G --> G1[Error Response Parsing]
         G --> G2[Network Error Handling]
@@ -677,10 +690,10 @@ graph TB
 # Run all tests (backend + frontend)
 npm test
 
-# Run backend tests only (30 tests)
+# Run backend tests only (29 tests)
 npm run test:backend
 
-# Run frontend tests only (39 tests)
+# Run frontend tests only (37 tests)
 npm run test:frontend
 
 # Watch mode (auto-rerun on changes)
@@ -754,7 +767,7 @@ Tests:       30 passed, 30 total
 - [Docker Workflow Guide](docs/01_DOCKER_WORKFLOW.md) - Automated startup & health checks
 
 ### Testing
-- [Testing Guide](docs/02_TESTING.md) - Complete testing documentation with 69 tests, examples, and best practices
+- [Testing Guide](docs/02_TESTING.md) - Complete testing documentation with 66 tests (100% pass rate), examples, and best practices
 
 ### Archive
 Historical implementation notes and changelogs can be found in [docs/archive/](docs/archive/)
