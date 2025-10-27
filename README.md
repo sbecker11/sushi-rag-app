@@ -141,10 +141,10 @@ graph TB
         V --> D
     end
     
-    style E fill:#e1f5ff
-    style P fill:#e8f5e9
-    style S fill:#fce4ec
-    style T fill:#fff4e1
+    style E fill:#004080
+    style P fill:#004d00
+    style S fill:#660033
+    style T fill:#663300
 ```
 
 **Key Features:**
@@ -361,7 +361,7 @@ You can start it by:
   - Or running: open -a Docker
 ```
 
-For more details, see [docs/DOCKER_CHECK.md](docs/DOCKER_CHECK.md)
+For more details, see [Docker Workflow Guide](docs/01_DOCKER_WORKFLOW.md)
 
 ## Performance Monitoring
 
@@ -718,8 +718,7 @@ npm run test:coverage
 #### Documentation
 
 For detailed test information, see:
-- [Testing Guide](docs/05_TESTING.md) - Complete testing documentation with examples
-- [Test Suite Summary](docs/06_TEST_SUITE_SUMMARY.md) - High-level overview and statistics
+- [Testing Guide](docs/02_TESTING.md) - Complete testing documentation with examples
 
 #### Example Test Output
 
