@@ -76,10 +76,11 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 
 <div align="center">
   <a href="docs/images/rag-architecture-dark.svg" target="_blank">
-    <img src="docs/images/rag-architecture-dark.svg" width="700" alt="RAG Architecture Diagram">
+    <img src="docs/images/rag-architecture-dark.svg" width="600" style="max-width: 100%; height: auto;" alt="RAG Architecture Diagram">
   </a>
   <p><em>Click to open full-size diagram in new window</em></p>
 </div>
+
 
 > **Note**: This diagram is also available as SVG for presentations and documentation. See `docs/images/rag-architecture-dark.svg`
 
