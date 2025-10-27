@@ -287,7 +287,7 @@ cp env.example .env
 # Then edit .env and add your OpenAI API key
 ```
 
-**Note:** AI features require an OpenAI API key. You can create a new one at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>.
+**Note:** AI features require an OpenAI API key. You can create a new one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">https://platform.openai.com/api-keys</a> (opens in new window).
 
 ## npm Scripts
 
