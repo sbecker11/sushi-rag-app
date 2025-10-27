@@ -72,7 +72,15 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 
 ## Architecture
 
+This application has three main feature areas, each with its own architecture diagram:
+
+1. **RAG System Architecture** - Shows how the AI assistant processes natural language queries
+2. **Order Flow Diagram** - Shows how customers place orders
+3. **Testing Architecture** - Shows the comprehensive test suite structure (see Testing section below)
+
 ### RAG System Architecture
+
+This is the main technical diagram showing the complete AI workflow from user query to response, including vector search and LLM generation.
 
 <div align="center">
   <a href="docs/images/rag-architecture-dark.svg" target="_blank">
@@ -81,68 +89,13 @@ A modern food ordering web application with AI-powered menu assistance, featurin
   <p><em>Click to open full-size diagram in new window</em></p>
 </div>
 
-
 > **Note**: This diagram is also available as SVG for presentations and documentation. See `docs/images/rag-architecture-dark.svg`
-
-<details>
-<summary>📊 Interactive Mermaid Diagram (click to expand)</summary>
-
-```mermaid
-graph TB
-    subgraph "Frontend"
-        A[User Query] --> B[AI Chat Component]
-        B --> C[HTTP Request]
-    end
-    
-    subgraph "Backend API"
-        C --> D["API: /assistant/chat"]
-        D --> E[Agent Service]
-    end
-    
-    subgraph "Agentic Framework"
-        E --> F{OpenAI Functions Agent}
-        F --> G[Tool Selection]
-        G --> H[Tool 1: search_menu]
-        G --> I[Tool 2: get_item_details]
-        G --> J[Tool 3: filter_by_price]
-    end
-    
-    subgraph "RAG Pipeline"
-        H --> K[Generate Query Embedding]
-        K --> L[OpenAI Embeddings API]
-        L --> M[Vector: 1536 dimensions]
-        M --> N[ChromaDB Vector Search]
-        N --> O[Semantic Similarity]
-        O --> P["Top-K Results: ~100ms"]
-        P --> Q[Retrieved Context]
-    end
-    
-    subgraph "LLM Generation"
-        Q --> R[Prompt Template]
-        F --> R
-        R --> S[System Prompt + Context + Query]
-        S --> T[GPT-4 API]
-        T --> U[Generated Response]
-    end
-    
-    subgraph "Response Flow"
-        U --> V[Backend Response]
-        V --> W[Frontend Display]
-        W --> X[User sees answer]
-    end
-    
-    style E fill:#e1f5ff
-    style F fill:#fff4e1
-    style N fill:#e8f5e9
-    style T fill:#fce4ec
-    style P fill:#f3e5f5
-```
-
-</details>
 
 ---
 
 ### Order Flow with Session Storage
+
+**Note**: This is a separate flow showing the ordering system (menu browsing and checkout), which is independent from the RAG system shown above.
 
 <details>
 <summary>🛒 Order Flow Diagram (click to expand)</summary>
@@ -616,9 +569,9 @@ lsof -ti:5173 | xargs kill -9  # Frontend
 
 ## Testing
 
-### Comprehensive Test Suite ✅
+### Testing Architecture
 
-The project includes **69 comprehensive unit tests** covering backend validation, database error handling, and frontend UI/error handling.
+This diagram shows how the comprehensive test suite (69 tests) validates the entire application from backend API to frontend UI.
 
 <details>
 <summary>🧪 Testing Architecture Diagram (click to expand)</summary>
