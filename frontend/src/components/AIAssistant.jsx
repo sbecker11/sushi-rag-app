@@ -63,16 +63,30 @@ function AIAssistant() {
     setLoading(true);
 
     try {
-      // Use RAG Q&A endpoint (agent is disabled)
-      const response = await axios.post(`${API_URL}/api/assistant/ask`, {
-        question: userMessage
-      });
-
-      // Add assistant response
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response.data.answer
-      }]);
+      if (aiStatus.agent) {
+        // Use multi-tool agent when available (pass history for context)
+        const history = messages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => ({ role: m.role, content: m.content }));
+        const response = await axios.post(`${API_URL}/api/assistant/chat`, {
+          message: userMessage,
+          history
+        });
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: response.data.response,
+          toolsUsed: response.data.toolsUsed || []
+        }]);
+      } else {
+        // Fallback to RAG Q&A
+        const response = await axios.post(`${API_URL}/api/assistant/ask`, {
+          question: userMessage
+        });
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: response.data.answer
+        }]);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, {
@@ -114,9 +128,10 @@ function AIAssistant() {
         <div>
           <h3 className="font-bold text-lg">🤖 Sushi Assistant</h3>
           <div className="text-xs text-indigo-100 flex gap-2 mt-1">
-            <span className={aiStatus.rag ? "text-green-300" : "text-red-300"}>
-              {aiStatus.rag ? "● Online" : "● Offline"}
+            <span className={(aiStatus.agent || aiStatus.rag) ? "text-green-300" : "text-red-300"}>
+              {(aiStatus.agent || aiStatus.rag) ? "● Online" : "● Offline"}
             </span>
+            {aiStatus.agent && <span className="text-indigo-200">Agent</span>}
           </div>
         </div>
         <div className="flex gap-2">
@@ -202,19 +217,19 @@ function AIAssistant() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about our menu..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            disabled={loading || !aiStatus.rag}
+            disabled={loading || !(aiStatus.agent || aiStatus.rag)}
           />
           <button
             type="submit"
-            disabled={!input.trim() || loading || !aiStatus.rag}
+            disabled={!input.trim() || loading || !(aiStatus.agent || aiStatus.rag)}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           >
             {loading ? '...' : '→'}
           </button>
         </div>
-        {!aiStatus.rag && (
+        {!(aiStatus.agent || aiStatus.rag) && (
           <p className="text-xs text-red-500 mt-2">
-            AI services unavailable. Check backend logs. (RAG: {JSON.stringify(aiStatus.rag)})
+            AI services unavailable. Check backend logs and OpenAI API key.
           </p>
         )}
       </form>

@@ -13,6 +13,9 @@ Clean, consecutive numbering for user-facing documentation:
 ### 02: Testing
 - **02_TESTING.md** - Complete testing guide with statistics, examples, and best practices (all-in-one)
 
+### 03: AI Agent and Tools
+- **03_AI_AGENT_AND_TOOLS.md** - Multi-tool agent behavior, semantic search vs tools, price filter bounds, and design notes for filters and popularity
+
 ---
 
 ## Archive (docs/archive/)
@@ -37,7 +40,7 @@ See [docs/archive/README.md](docs/archive/README.md) for details on why these we
 
 ## Benefits of This Structure
 
-✅ **Clean numbering**: 00-02 consecutive sequence  
+✅ **Clean numbering**: 00-03 consecutive sequence  
 ✅ **Easy navigation**: Logical grouping by topic  
 ✅ **Reduced clutter**: Historical docs separated  
 ✅ **Maintainable**: New docs can be added without gaps  
@@ -46,4 +49,4 @@ See [docs/archive/README.md](docs/archive/README.md) for details on why these we
 
 ---
 
-*Last updated: October 26, 2025*
+*Last updated: February 2, 2026*
