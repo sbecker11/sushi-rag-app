@@ -13,7 +13,7 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - 🔍 **Semantic search** - find items by description, ingredients, dietary preferences
 - 🧠 **Multi-tool AI agent** - autonomous tool selection for complex queries
 - 💬 **Conversational interface** - natural language menu recommendations
-- 🗄️ **Vector database** - ChromaDB for sub-100ms semantic similarity search
+- 🗄️ **Vector database** - ChromaDB for semantic similarity search
 - 🐳 Docker-based development environment
 - ✅ Automatic Docker health checks
 - ⏱️ Performance monitoring (OpenAI & PostgreSQL query timing)
