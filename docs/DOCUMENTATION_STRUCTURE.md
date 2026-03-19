@@ -19,6 +19,9 @@ Clean, consecutive numbering for user-facing documentation:
 ### 04: Query Examples
 - **04_QUERY_EXAMPLES.md** - Ready-to-use prompt examples for frontend chat and MCP tools
 
+### 05: Deployment Profiles
+- **05_DEPLOYMENT_PROFILES.md** - Local Docker and AWS Fargate profile strategy with migration checklist
+
 ---
 
 ## Archive (docs/archive/)
@@ -43,7 +46,7 @@ See [docs/archive/README.md](docs/archive/README.md) for details on why these we
 
 ## Benefits of This Structure
 
-✅ **Clean numbering**: 00-04 consecutive sequence  
+✅ **Clean numbering**: 00-05 consecutive sequence  
 ✅ **Easy navigation**: Logical grouping by topic  
 ✅ **Reduced clutter**: Historical docs separated  
 ✅ **Maintainable**: New docs can be added without gaps  
