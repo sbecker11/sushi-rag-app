@@ -1,0 +1,28 @@
+project_name           = "sushi-rag-app"
+environment            = "dev"
+aws_region             = "us-east-1"
+backend_container_port = 3001
+desired_count          = 1
+task_cpu               = 512
+task_memory            = 1024
+backend_image_tag      = "latest"
+
+# Set this to your deployed frontend domain for CORS.
+frontend_url = "https://example-frontend.example.com"
+
+# For scaffold-only bootstrapping.
+# Move to Secrets Manager before shared/prod use.
+openai_api_key = "REPLACE_ME"
+
+# RDS scaffold values
+db_name            = "sushi_rag_app_orders"
+db_username        = "sushi_rag_app_user"
+db_password        = "REPLACE_ME_DB_PASSWORD"
+db_instance_class  = "db.t4g.micro"
+db_allocated_storage = 20
+db_engine_version  = "16.3"
+
+# Existing Chroma service endpoint (replace with your deployed endpoint)
+chroma_host = "REPLACE_ME_CHROMA_ENDPOINT"
+chroma_port = 8000
+
