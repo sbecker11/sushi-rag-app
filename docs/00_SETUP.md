@@ -450,6 +450,63 @@ npm run kill:ports
 npm run dev
 ```
 
+If startup has gotten messy (stale Docker containers + stuck ports), use:
+```bash
+npm run dev:clean
+```
+
+### Chroma Container Name Conflict
+
+**Problem:** `docker-compose up -d` fails with:
+`The container name "/sushi-rag-app-chromadb" is already in use`
+
+**Solution:**
+```bash
+# Preferred: clean + restart
+npm run dev:clean
+
+# Or manually remove only the conflicting container
+docker rm -f sushi-rag-app-chromadb
+```
+
+### MCP Server Tools Missing or Stale
+
+**Problem:** MCP tools disappear, only some tools show up, or a tool says "not found".
+
+**Solution:**
+1. Open Cursor **Tools & MCP**
+2. Restart/toggle `user-sushi-rag-mcp-server`
+3. Wait until status is green
+4. Re-run the MCP command
+
+If still stale, reload Cursor window and re-open Tools & MCP.
+
+### MCP Uses Old OpenAI API Key
+
+**Problem:** MCP requests return 401 with an old key suffix even after updating app `.env`.
+
+**Cause:** MCP server may use its own env config (`mcp.json` or MCP-specific `.env`) instead of app `.env`.
+
+**Solution:**
+- Update the key in MCP server config/env used by `sushi-rag-mcp-server`
+- Restart MCP server from Tools & MCP
+- Retry MCP query
+
+### JSON Parsing Error During Menu Generation
+
+**Problem:** Backend logs show `Could not parse JSON from LLM response`.
+
+**What happens:** App falls back to static menu and continues working.
+
+**Quick recovery:**
+```bash
+# Restart backend to retry menu generation
+cd backend
+npm run dev
+```
+
+If it persists, keep using static fallback menu or lower model temperature for generation.
+
 ### Verify Environment Setup
 
 After creating `.env`, verify it's working:
