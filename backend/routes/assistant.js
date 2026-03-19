@@ -90,6 +90,34 @@ router.post('/search', async (req, res) => {
 });
 
 /**
+ * POST /api/assistant/debug
+ * Debug constrained retrieval behavior
+ * Body: { question: string, limit: number (optional) }
+ */
+router.post('/debug', async (req, res) => {
+  try {
+    const { question, limit = 10 } = req.body;
+
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    if (!vectorStore.isInitialized()) {
+      return res.status(503).json({
+        error: 'Debug not available',
+        message: 'Vector database not initialized'
+      });
+    }
+
+    const result = await ragService.debug(question, limit);
+    res.json(result);
+  } catch (error) {
+    console.error('Error in /debug endpoint:', error);
+    res.status(500).json({ error: 'Debug failed' });
+  }
+});
+
+/**
  * GET /api/assistant/status
  * Check AI services status
  */

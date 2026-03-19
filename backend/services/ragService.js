@@ -90,6 +90,49 @@ class RAGService {
     return `Here are the matching menu items:\n\n${lines.join('\n')}`;
   }
 
+  sortDeterministic(items) {
+    return [...items].sort((a, b) => a.price - b.price || a.name.localeCompare(b.name));
+  }
+
+  async debug(question, limit = 10) {
+    if (!vectorStore.isInitialized()) {
+      return {
+        available: false,
+        reason: 'vector_store_unavailable',
+        question,
+        constraints: this.inferConstraints(question),
+        selectedItems: []
+      };
+    }
+
+    const broadItems = await vectorStore.semanticSearch(question, 20);
+    const constraints = this.inferConstraints(question);
+    const hasConstraints = this.hasConstraints(constraints);
+    const constrained = this.applyConstraints(broadItems, constraints);
+    const selected = this.sortDeterministic(hasConstraints ? constrained : broadItems).slice(0, limit);
+
+    return {
+      available: true,
+      question,
+      constraints,
+      hasConstraints,
+      counts: {
+        broad: broadItems.length,
+        constrained: constrained.length,
+        selected: selected.length
+      },
+      selectedItems: selected.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        category: item.category,
+        spiceLevel: Number(item.spiceLevel || 0),
+        dietary: item.dietary || [],
+        similarity: Math.round((item.similarity || 0) * 1000) / 1000
+      }))
+    };
+  }
+
   async initialize() {
     if (this.initialized) {
       return;
@@ -154,7 +197,7 @@ class RAGService {
 
       // Deterministic mode for constrained queries: fixed filtered list + explanation.
       if (hasConstraints) {
-        const sorted = [...relevantItems].sort((a, b) => a.price - b.price || a.name.localeCompare(b.name));
+        const sorted = this.sortDeterministic(relevantItems);
         return {
           answer: this.formatDeterministicAnswer(question, sorted),
           sources: sorted.map(item => ({
