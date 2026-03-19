@@ -16,6 +16,80 @@ class RAGService {
     this.initialized = false;
   }
 
+  inferConstraints(question) {
+    const q = question.toLowerCase();
+    const constraints = {
+      maxPrice: null,
+      minPrice: null,
+      category: null,
+      spice: null // 'mild' | 'spicy'
+    };
+
+    const maxMatch = q.match(/(?:under|below|less than|not over|at most)\s*\$?\s*(\d+(?:\.\d+)?)/);
+    if (maxMatch) constraints.maxPrice = parseFloat(maxMatch[1]);
+
+    const minMatch = q.match(/(?:over|above|at least|minimum|min)\s*\$?\s*(\d+(?:\.\d+)?)/);
+    if (minMatch) constraints.minPrice = parseFloat(minMatch[1]);
+
+    if (q.includes('maki')) constraints.category = 'rolls';
+    else if (q.includes('nigiri')) constraints.category = 'nigiri';
+    else if (q.includes('appetizer')) constraints.category = 'appetizers';
+    else if (q.includes('soup')) constraints.category = 'soup';
+
+    if (q.includes('mild') || q.includes('not spicy') || q.includes('not too spicy')) {
+      constraints.spice = 'mild';
+    } else if (q.includes('spicy') || q.includes('hot')) {
+      constraints.spice = 'spicy';
+    }
+
+    return constraints;
+  }
+
+  hasConstraints(constraints) {
+    return (
+      constraints.maxPrice !== null ||
+      constraints.minPrice !== null ||
+      constraints.category !== null ||
+      constraints.spice !== null
+    );
+  }
+
+  matchesCategory(category, constraint) {
+    const c = (category || '').toLowerCase();
+    if (!constraint) return true;
+    if (constraint === 'rolls') return c.includes('roll');
+    if (constraint === 'nigiri') return c.includes('nigiri');
+    if (constraint === 'appetizers') return c.includes('appetizer');
+    if (constraint === 'soup') return c.includes('soup');
+    return c === constraint;
+  }
+
+  applyConstraints(items, constraints) {
+    return items.filter((item) => {
+      if (constraints.maxPrice !== null && item.price > constraints.maxPrice) return false;
+      if (constraints.minPrice !== null && item.price < constraints.minPrice) return false;
+      if (!this.matchesCategory(item.category, constraints.category)) return false;
+
+      const spice = Number(item.spiceLevel || 0);
+      if (constraints.spice === 'mild' && spice > 1) return false;
+      if (constraints.spice === 'spicy' && spice < 1) return false;
+
+      return true;
+    });
+  }
+
+  formatDeterministicAnswer(question, items) {
+    if (!items.length) {
+      return `I couldn't find items matching "${question}" with the requested constraints.`;
+    }
+    const lines = items.map((item, idx) => {
+      const spice = Number(item.spiceLevel || 0);
+      const spiceText = spice > 0 ? `, spice ${spice}/3` : '';
+      return `${idx + 1}. ${item.name} - $${item.price}${item.category ? ` (${item.category}` : ''}${item.category ? spiceText + ')' : ''}`;
+    });
+    return `Here are the matching menu items:\n\n${lines.join('\n')}`;
+  }
+
   async initialize() {
     if (this.initialized) {
       return;
@@ -61,7 +135,11 @@ class RAGService {
 
       // Step 1: Retrieve relevant context from vector store
       const retrievalStart = Date.now();
-      const relevantItems = await vectorStore.semanticSearch(question, 5);
+      const broadItems = await vectorStore.semanticSearch(question, 20);
+      const constraints = this.inferConstraints(question);
+      const constrained = this.applyConstraints(broadItems, constraints);
+      const hasConstraints = this.hasConstraints(constraints);
+      const relevantItems = (hasConstraints ? constrained : broadItems).slice(0, 5);
       
       if (process.env.ENABLE_PERFORMANCE_LOGGING === 'true') {
         console.log(`⏱️  RAG Context Retrieval: ${Date.now() - retrievalStart}ms`);
@@ -71,6 +149,20 @@ class RAGService {
         return {
           answer: "I couldn't find any menu items matching your question. Could you try rephrasing or ask about something else?",
           sources: []
+        };
+      }
+
+      // Deterministic mode for constrained queries: fixed filtered list + explanation.
+      if (hasConstraints) {
+        const sorted = [...relevantItems].sort((a, b) => a.price - b.price || a.name.localeCompare(b.name));
+        return {
+          answer: this.formatDeterministicAnswer(question, sorted),
+          sources: sorted.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            similarity: Math.round(item.similarity * 100) / 100
+          }))
         };
       }
 

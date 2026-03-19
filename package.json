@@ -21,7 +21,7 @@
     "cleanup:docker": "bash scripts/cleanup-docker-containers.sh",
     "kill:ports": "bash scripts/kill-ports.sh",
     "open:browser": "bash scripts/open-browser.sh",
-    "prestart": "npm run kill:ports && npm run check:docker-daemon && npm run docker:up && npm run check:docker && npm run db:setup",
+    "prestart": "npm run kill:ports && npm run cleanup:docker && npm run check:docker-daemon && npm run docker:up && npm run check:docker && npm run db:setup",
     "dev": "npm run prestart && concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\" \"npm run open:browser\"",
     "server": "npm run prestart && cd backend && npm run dev",
     "client": "npm run prestart && cd frontend && npm run dev",

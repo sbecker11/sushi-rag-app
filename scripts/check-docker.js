@@ -116,7 +116,7 @@ function checkServices() {
   return true;
 }
 
-function main() {
+async function main() {
   log('========================================', YELLOW);
   log('     Docker & Services Check', YELLOW);
   log('========================================', YELLOW);
@@ -126,13 +126,25 @@ function main() {
     exit(1);
   }
 
-  // Check if required services are running
-  if (!checkServices()) {
-    exit(1);
+  // Check if required services are running (retry briefly until healthy)
+  const attempts = parseInt(process.env.DOCKER_HEALTHCHECK_ATTEMPTS || '6', 10);
+  const waitMs = parseInt(process.env.DOCKER_HEALTHCHECK_WAIT_MS || '3000', 10);
+
+  for (let i = 1; i <= attempts; i++) {
+    const ok = checkServices();
+    if (ok) {
+      log('\n✅ All checks passed! Starting application...', GREEN);
+      log('========================================\n', YELLOW);
+      return;
+    }
+
+    if (i < attempts) {
+      log(`\n⏳ Waiting for services to be ready... (attempt ${i}/${attempts})`, YELLOW);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
   }
 
-  log('\n✅ All checks passed! Starting application...', GREEN);
-  log('========================================\n', YELLOW);
+  exit(1);
 }
 
 main();

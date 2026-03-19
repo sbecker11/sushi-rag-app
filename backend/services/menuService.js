@@ -106,16 +106,25 @@ Requirements: Mix of rolls, nigiri, appetizers. Prices $5-$15. Return ONLY the c
       console.warn('⚠️  Response was truncated due to max_tokens limit!');
     }
     
-    // Extract JSON from markdown code blocks if present
-    const jsonMatch = content.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/) || content.match(/(\[[\s\S]*?\])/);
-    
-    if (jsonMatch) {
+    // Extract JSON from markdown code blocks if present.
+    // NOTE: avoid non-greedy `[...]` matching because it can stop at the first
+    // nested `]` inside arrays like dietary: ["pescatarian"].
+    const fencedMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    let jsonString = fencedMatch ? fencedMatch[1].trim() : content.trim();
+
+    // If content includes extra text around the array, slice from first '[' to last ']'.
+    const firstBracket = jsonString.indexOf('[');
+    const lastBracket = jsonString.lastIndexOf(']');
+    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+      jsonString = jsonString.slice(firstBracket, lastBracket + 1);
+    }
+
+    if (jsonString) {
       try {
         // Try to fix common JSON issues
-        let jsonString = jsonMatch[1]
+        jsonString = jsonString
           .replace(/,(\s*[}\]])/g, '$1')  // Remove trailing commas
-          .replace(/'/g, '"')              // Replace single quotes with double quotes
-          .replace(/(\w+):/g, '"$1":');    // Quote unquoted keys
+          .replace(/'/g, '"');             // Replace single quotes with double quotes
         
         const menuItems = JSON.parse(jsonString);
         
