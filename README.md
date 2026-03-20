@@ -9,13 +9,16 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 - 📦 Place orders
 - 💾 **Session storage** - customer information retained across orders for quick reordering
 - ✨ **Advanced form validation** - onBlur field-level error checking with real-time visual feedback
-- 🤖 **AI-powered chat assistant** with RAG and agentic framework
+- 🤖 **AI-powered chat assistant** with RAG and a multi-tool LangChain agent
 - 🔍 **Semantic search** - find items by description, ingredients, dietary preferences
-- 🧠 **Multi-tool AI agent** - autonomous tool selection for complex queries
+- 🧠 **Multi-tool AI agent** - autonomous tool selection for complex queries (price filter, semantic search, item details)
+- 🎯 **Deterministic answers for constrained queries** - RAG path parses price/category/spice from natural language and returns a consistent, sorted list when constraints apply (parity with debug tooling)
 - 💬 **Conversational interface** - natural language menu recommendations
 - 🗄️ **Vector database** - ChromaDB for semantic similarity search
 - 🐳 Docker-based development environment
-- ✅ Automatic Docker health checks
+- ✅ Automatic Docker health checks (with retries while containers become healthy)
+- 🧹 **`cleanup:docker` / `dev:clean`** - avoids stale container name conflicts before `docker-compose up`
+- 🧪 **Test coverage thresholds** - backend (Jest) and frontend (Vitest) enforce **≥80%** global coverage when you run `npm run test:coverage`
 - ⏱️ Performance monitoring (OpenAI & PostgreSQL query timing)
 
 ## Screenshots
@@ -66,10 +69,10 @@ A modern food ordering web application with AI-powered menu assistance, featurin
 
 ### AI Stack
 - **Vector Database**: ChromaDB for semantic search with cosine similarity
-- **Embeddings**: OpenAI text-embedding-3-small (1536 dimensions)
-- **RAG Pipeline**: LangChain for context retrieval + generation
-- **Agentic Framework**: LangChain OpenAI Functions Agent with custom tools
-- **LLM**: GPT-4 for natural language understanding and generation
+- **Embeddings**: OpenAI `text-embedding-3-small` (1536 dimensions)
+- **RAG**: Retrieval from ChromaDB + GPT-4 synthesis; **constrained queries** use parsed filters + deterministic formatting (see `docs/03_AI_AGENT_AND_TOOLS.md`)
+- **Agent**: LangChain `createAgent` with Zod-typed tools (`search_menu`, `filter_by_price`, `get_item_details`) and GPT-4
+- **LLM**: GPT-4 for agent chat and RAG answers; GPT-3.5 for menu JSON generation
 
 ## Architecture
 
@@ -191,11 +194,11 @@ graph TB
 - **Augmentation**: Inject retrieved context into LLM prompt
 - **Generation**: GPT-4 generates response grounded in actual menu data
 
-**3. Agentic Framework**
-- **Autonomous Tool Selection**: Agent decides which tools to call
-- **Function Calling**: GPT-4 generates structured tool invocations
-- **Multi-step Reasoning**: Chains multiple tool calls for complex queries
-- **Context Management**: Maintains conversation history
+**3. Agent (LangChain)**
+- **Autonomous tool selection**: Model chooses `search_menu`, `filter_by_price`, and/or `get_item_details`
+- **Structured tools**: Zod schemas for tool inputs; **price filter**: inclusive min, **exclusive max** (e.g. “under $10” → `max: 10` means `price < 10`)
+- **History**: Frontend sends prior turns to `POST /api/assistant/chat` when the agent is initialized
+- **UI**: “Agent” badge when the multi-tool agent is online; otherwise the assistant falls back to RAG `ask`
 
 **4. Session Storage for Customer Data**
 - **Automatic Persistence**: Customer information (name, phone) saved after first order
@@ -218,12 +221,11 @@ graph TB
 - **Implementation**: Custom React validation system with field-level state management
 
 **6. Testing & Quality Assurance**
-- **Comprehensive Test Suite**: 66 tests covering backend and frontend (100% pass rate)
-- **Backend Validation**: 29 tests for order processing, database errors, edge cases
-- **Frontend Validation**: 37 tests for UI, error handling, session storage, onBlur validation
-- **Error Code System**: Validates proper error categorization (📝🌐🔧⏱️🔁⚠️)
-- **CI/CD Ready**: Automated test execution with Jest and Vitest
-- **Coverage**: Success cases, validation errors, database failures, network issues
+- **Automated suite**: **Jest** (backend) + **Vitest** (frontend); run `npm test` for the full run
+- **Backend**: Orders API, assistant routes, RAG/agent/vector/menu services, parity checks for constrained queries
+- **Frontend**: `App` integration (menu, cart, checkout), `OrderForm`, `AIAssistant`, cart/menu components
+- **Coverage gate**: `npm run test:coverage` enforces **≥80%** statements/branches/functions/lines (global) in both packages
+- **Error handling**: Order flow errors (validation, DB, network, duplicates) aligned with UI behavior
 
 **7. Example Flow - AI Assistant**
 
@@ -242,12 +244,11 @@ Step 3: Vector Search
   → ChromaDB returns top 5 matches (~80ms)
   → Filter results by price < $15
 
-Step 4: LLM Response
-  → Context: [Spicy Tofu Roll $12, Veggie Tempura $10...]
-  → GPT-4 synthesizes natural language response
-  → "I found 2 great options for you..."
+Step 4: Response
+  → **Agent path**: GPT-4 composes the reply from tool results (may chain multiple tools).
+  → **RAG path** (`/ask`): If the question implies price/category/spice constraints, the app may return a **fixed sorted list** without LLM synthesis for consistency.
 
-Total Time: ~2 seconds (including LLM generation)
+Total time varies with model latency and number of tool calls.
 ```
 
 ## Quick Start
@@ -280,7 +281,7 @@ npm run dev
 
 The app will be available at:
 - **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:3000
+- **Backend API:** http://localhost:3001 (see `PORT` in `.env`; frontend uses `VITE_API_URL` if set)
 
 ### Environment Setup
 
@@ -321,15 +322,22 @@ cp env.example .env
 
 **Note:** AI features require an OpenAI API key. You can create a new one at <https://platform.openai.com/api-keys>.
 
+To sanity-check the key from the repo root:
+
+```bash
+npm run test:openai
+```
+
 ## npm Scripts
 
 ### Development
 
 ```bash
-npm run dev          # 🚀 Start everything (kills ports, starts Docker, checks health, runs servers)
+npm run dev          # 🚀 Start everything (cleanup, ports, Docker, health, db:setup, both servers + browser)
+npm run dev:clean    # Same as dev after explicit kill:ports + cleanup:docker (useful after conflicts)
 npm run server       # Start backend only (also runs prestart checks)
 npm run client       # Start frontend only (also runs prestart checks)
-npm run prestart     # Run all pre-flight checks (ports, Docker, health)
+npm run prestart     # Run all pre-flight checks (ports, Docker cleanup, docker up, health, db:setup)
 ```
 
 ### Docker Management
@@ -351,9 +359,12 @@ npm run db:setup     # Initialize database schema
 ```bash
 npm run check:docker        # Full Docker and services health check
 npm run check:docker-daemon # Quick check if Docker Desktop is running
-npm run cleanup:docker      # Remove old Docker containers
+npm run cleanup:docker      # Remove stale app containers (e.g. postgres/chromadb) before compose
 npm run kill:ports          # Kill processes on ports 3001 and 5173
 npm run install-all         # Install all dependencies
+npm run test:coverage       # Backend + frontend tests with coverage (must meet 80% thresholds)
+npm run test:mcp            # Python MCP unit tests (pytest under mcp/, auto venv)
+npm run test:openai         # Quick script to verify OPENAI_API_KEY (see script output)
 ```
 
 ## Automatic Docker Checks
@@ -441,49 +452,36 @@ ENABLE_PERFORMANCE_LOGGING=false
 ```
 sushi-rag-app/
 ├── backend/
-│   ├── config/
-│   │   └── database.js           # PostgreSQL configuration
-│   ├── database/
-│   │   └── setup.js              # Database initialization
-│   ├── routes/
-│   │   ├── menu.js               # Menu API endpoints
-│   │   ├── orders.js             # Order API endpoints
-│   │   └── assistant.js          # AI assistant API endpoints
-│   ├── services/
-│   │   ├── menuService.js        # Menu & OpenAI integration
-│   │   ├── vectorStore.js        # ChromaDB & embeddings
-│   │   ├── ragService.js         # RAG pipeline
-│   │   └── agentService.js       # LangChain agent & tools
-│   └── server.js                 # Express server + AI initialization
+│   ├── config/database.js
+│   ├── database/setup.js
+│   ├── routes/                    # menu, orders, assistant (+ tests)
+│   ├── services/                  # menuService, vectorStore, ragService, agentService
+│   └── server.js
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── Header.jsx        # App header
-│   │   │   ├── MenuCard.jsx      # Menu item display
-│   │   │   ├── Cart.jsx          # Shopping cart
-│   │   │   ├── OrderForm.jsx     # Checkout form with session storage
-│   │   │   └── AIAssistant.jsx   # AI chat interface
-│   │   ├── App.jsx               # Main app component
-│   │   └── main.jsx              # Entry point
+│   │   ├── components/            # Header, MenuGrid, MenuItem, Cart, OrderForm, AIAssistant, …
+│   │   ├── App.jsx
+│   │   └── main.jsx
 │   └── index.html
-├── docs/                          # Documentation (numbered for order)
-│   ├── 00_QUICK_START.md
-│   ├── 10_AI_STACK_ENHANCEMENT.md
-│   ├── 12_RAG_IMPLEMENTATION_COMPLETE.md
-│   └── ...
-├── scripts/
-│   ├── check-docker.js            # Docker & services health check
-│   ├── check-docker-daemon.sh     # Docker Desktop check
-│   ├── kill-ports.sh              # Port cleanup
-│   └── cleanup-docker-containers.sh
-└── docker-compose.yml             # Docker services (PostgreSQL, ChromaDB)
+├── docs/                          # Numbered guides (see Documentation below)
+├── infra/
+│   ├── local/README.md            # Local Docker profile notes
+│   └── aws/                       # Fargate-oriented notes + Terraform scaffold
+├── mcp/                           # Python MCP server (Cursor / Claude Desktop) → same Chroma as app
+├── scripts/                       # Docker checks, port kill, OpenAI key smoke test, …
+├── docker-compose.yml             # PostgreSQL + ChromaDB
+├── env.example
+└── package.json                   # Root orchestration (dev, test, coverage)
 ```
+
+### MCP (optional — developer tooling)
+
+The **`mcp/`** folder runs a local **Model Context Protocol** server against your Chroma collection (`sushi_menu` by default). It is **not** part of the production web stack. Setup: [`mcp/README.md`](mcp/README.md).
 
 ## API Endpoints
 
 ### Menu
-- `GET /api/menu` - Get all menu items
-- `GET /api/menu/:id` - Get specific menu item
+- `GET /api/menu` - Get menu items (OpenAI-generated JSON, with cache and static fallback)
 
 ### Orders
 - `POST /api/orders` - Create new order
@@ -491,10 +489,11 @@ sushi-rag-app/
 - `GET /api/orders/:id` - Get order details
 
 ### AI Assistant
-- `POST /api/assistant/chat` - Chat with AI agent (multi-tool, agentic)
-- `POST /api/assistant/ask` - Ask RAG-powered question
-- `POST /api/assistant/search` - Semantic search for menu items
-- `GET /api/assistant/status` - Check AI service initialization status
+- `POST /api/assistant/chat` - Multi-tool agent chat (history supported)
+- `POST /api/assistant/ask` - RAG Q&A (constrained queries use deterministic listing when applicable)
+- `POST /api/assistant/search` - Semantic search over the vector index
+- `POST /api/assistant/debug` - Inspect inferred constraints + selected items (development / parity)
+- `GET /api/assistant/status` - `{ vectorStore, rag, agent }` readiness flags
 
 ## Troubleshooting
 
@@ -518,20 +517,23 @@ docker-compose logs
 npm run docker:reset
 ```
 
-**Container name conflict:**
+**Container name conflict (“name already in use”):**
 ```bash
-# This app uses unique container name "sushi-rag-app-postgres"
-# so conflicts should not occur. If they do:
-docker rm -f sushi-rag-app-postgres
+# Prestart runs cleanup; you can also run manually:
+npm run cleanup:docker
 npm run docker:up
+
+# Or a full clean dev start:
+npm run dev:clean
 ```
 
 **Port conflicts:**
 ```bash
 # Check what's using the port
-lsof -i :5432  # PostgreSQL
-lsof -i :3000  # Backend
-lsof -i :5173  # Frontend
+lsof -i :5432   # PostgreSQL (host mapping from compose)
+lsof -i :3001   # Backend API
+lsof -i :8000   # ChromaDB (default)
+lsof -i :5173   # Frontend (Vite)
 ```
 
 ### Database Issues
@@ -550,6 +552,11 @@ npm run db:setup
 ```
 
 ### Application Issues
+
+**OpenAI / AI assistant errors (`401`, “incorrect API key”):**
+- Set `OPENAI_API_KEY` in the **root** `.env` (backend loads from there).
+- Restart the backend after changing the key.
+- Use `npm run test:openai` or check `GET /api/assistant/status` (and backend logs).
 
 **Module not found or module type warnings:**
 ```bash
@@ -583,11 +590,10 @@ lsof -ti:5173 | xargs kill -9  # Frontend
    ```
    
    This automatically:
-   - 🧹 Cleans up any processes on ports 3001 and 5173
-   - 🔍 Checks if Docker Desktop is running
-   - 🐳 Starts Docker services (unique PostgreSQL container)
-   - ✅ Verifies services are healthy
-   - 🚀 Starts both frontend and backend
+   - 🧹 Cleans ports and removes stale app containers, then starts Docker services
+   - 🔍 Checks Docker Desktop and **waits** for Postgres/Chroma health when needed
+   - 🗄️ Runs `db:setup` against the dev database
+   - 🚀 Starts backend (3001), frontend (5173), and opens the browser (script)
 
 3. **Make changes:**
    - Frontend: Changes hot-reload automatically
@@ -601,195 +607,71 @@ lsof -ti:5173 | xargs kill -9  # Frontend
 
 ## Testing
 
-### Testing Architecture
+### Overview
 
-This diagram shows how the comprehensive test suite (66 tests, 100% pass rate) validates the entire application from backend API to frontend UI.
+- **Backend (Jest)**: Orders API, menu/assistant routes, `ragService`, `agentService`, `vectorStore`, `menuService`, constrained-query parity tests.
+- **Frontend (Vitest + Testing Library)**: `App` flows (menu load, cart, checkout, errors), `OrderForm`, `AIAssistant`, and presentational components (`Header`, `MenuGrid`, `Cart`, etc.).
+- **Coverage policy**: `npm run test:coverage` runs Jest and Vitest with **global thresholds of 80%** (statements, branches, functions, lines) for each package.
 
-<details>
-<summary>🧪 Testing Architecture Diagram (click to expand)</summary>
+Approximate counts (run `npm test` for the live total):
 
-```mermaid
-graph TB
-    subgraph "Test Runners"
-        A[npm test] --> B[Backend: Jest]
-        A --> C[Frontend: Vitest]
-    end
-    
-    subgraph "Backend Tests - 29 tests"
-        B --> D[Order Validation Tests]
-        D --> D1[✅ Success Cases: 4]
-        D --> D2[❌ Required Fields: 5]
-        D --> D3[❌ Format Errors: 4]
-        D --> D4[❌ Item Validation: 6]
-        
-        B --> E[Database Error Tests]
-        E --> E1[🔧 PostgreSQL Errors: 8]
-        E1 --> E2[Duplicate Orders 409]
-        E1 --> E3[Connection Failures 503]
-        E1 --> E4[Timeouts 504]
-        
-        B --> F[Edge Case Tests: 3]
-    end
-    
-    subgraph "Frontend Tests - 37 tests"
-        C --> G[App.jsx Tests: 12]
-        G --> G1[Error Response Parsing]
-        G --> G2[Network Error Handling]
-        G --> G3[Error Object Structure]
-        
-        C --> H[OrderForm Tests: 27]
-        H --> H1[Form Rendering: 2]
-        H --> H2[Validation: 8]
-        H --> H3[Error Display: 5]
-        H --> H4[Session Storage: 4]
-        H --> H5[Error Icons: 6]
-        H --> H6[Loading States: 2]
-    end
-    
-    subgraph "Test Coverage Areas"
-        D1 --> I[POST /api/orders]
-        D2 --> I
-        D3 --> I
-        D4 --> I
-        E1 --> I
-        F --> I
-        
-        I --> J[Express Routes]
-        J --> K[PostgreSQL Database]
-        
-        G1 --> L[Axios Error Handling]
-        H1 --> M[React Components]
-        H2 --> M
-        H3 --> M
-        H4 --> N[sessionStorage API]
-        
-        L --> M
-        M --> O[User Interface]
-    end
-    
-    subgraph "Error Handling Validation"
-        P[Error Code System]
-        P --> P1[📝 VALIDATION_ERROR]
-        P --> P2[🌐 NETWORK_ERROR]
-        P --> P3[🔧 DATABASE_UNAVAILABLE]
-        P --> P4[⏱️ TIMEOUT_ERROR]
-        P --> P5[🔁 DUPLICATE_ORDER]
-        
-        E1 --> P
-        G1 --> P
-        H5 --> P
-    end
-    
-    style B fill:#e1f5ff
-    style C fill:#fff4e1
-    style I fill:#e8f5e9
-    style P fill:#fce4ec
-    style D1 fill:#c8e6c9
-    style E1 fill:#ffccbc
+| Package   | Tests (typical) |
+|-----------|-----------------|
+| Backend   | ~96             |
+| Frontend  | ~62             |
+| **Total** | **~158**        |
+
+### Commands
+
+```bash
+npm test                 # Backend then frontend
+npm run test:backend     # Jest only
+npm run test:frontend    # Vitest only
+npm run test:watch       # Both in watch mode (concurrently)
+npm run test:coverage    # Full suite + coverage (enforces 80% thresholds)
 ```
 
-**Test Distribution:**
-- ✅ **Success Cases**: 8 tests (11.6%) - Valid submissions
-- ❌ **Validation Tests**: 42 tests (60.9%) - Error handling
-- 🎲 **Edge Cases**: 19 tests (27.5%) - Boundary conditions
+Reports: HTML/text under `backend/coverage/` and `frontend/coverage/` (the latter is gitignored).
 
-**Quality Metrics:**
-- **Backend Coverage**: Order validation, database errors, PostgreSQL error codes
-- **Frontend Coverage**: Error display, field highlighting, session storage, loading states
-- **Integration**: Tests verify backend error responses match frontend expectations
-- **Security**: Credit card storage only in DEV mode validated
+### Documentation
+
+- [Testing Guide](docs/02_TESTING.md) — setup, patterns, and troubleshooting
+
+<details>
+<summary>🧪 Testing architecture (high level)</summary>
+
+```mermaid
+graph LR
+  T[npm test] --> B[Jest backend]
+  T --> F[Vitest frontend]
+  B --> O[orders / menu / assistant routes]
+  B --> S[services: RAG, agent, vector, menu]
+  F --> A[App integration]
+  F --> C[components + OrderForm]
+```
 
 </details>
 
----
-
-#### Quick Test Commands
-
-```bash
-# Run all tests (backend + frontend)
-npm test
-
-# Run backend tests only (29 tests)
-npm run test:backend
-
-# Run frontend tests only (37 tests)
-npm run test:frontend
-
-# Watch mode (auto-rerun on changes)
-npm run test:watch
-
-# Generate coverage reports
-npm run test:coverage
-```
-
-#### Test Coverage
-
-| Component | Tests | Coverage |
-|-----------|-------|----------|
-| **Backend API** | 30 | Order validation, database errors, edge cases |
-| **Frontend App** | 12 | Error parsing, network handling |
-| **OrderForm** | 27 | UI validation, session storage, error display |
-| **Total** | **69** | Full order flow with success and failure scenarios |
-
-#### What's Tested
-
-**Backend Tests:**
-- ✅ Valid order submissions
-- ❌ Field validation (required fields, formats)
-- 🔧 Database error handling (8 different scenarios)
-- 📝 Specific error messages with error codes
-- 🎲 Edge cases and boundary conditions
-
-**Frontend Tests:**
-- 🎨 Error message display and field highlighting
-- 🔢 Error icon system (📝🌐🔧⏱️🔁⚠️)
-- 💾 Session storage behavior (DEV vs PROD)
-- ⏳ Loading states and form validation
-- 📞 Phone and credit card formatting
-
-#### Documentation
-
-For detailed test information, see:
-- [Testing Guide](docs/02_TESTING.md) - Complete testing documentation with examples
-
-#### Example Test Output
-
-```bash
-$ npm run test:backend
-
- PASS  routes/__tests__/orders.test.js
-  POST /api/orders - Order Validation
-    Success Cases
-      ✓ should create order with valid data
-      ✓ should accept credit card with 13 digits
-    Validation Failures
-      ✓ should reject order without first name
-      ✓ should reject phone with less than 10 digits
-    Database Error Handling
-      ✓ should handle duplicate order error (23505)
-      ✓ should handle connection refused error
-
-Test Suites: 1 passed, 1 total
-Tests:       30 passed, 30 total
-```
-
 ## Deployment
 
-(Coming soon)
+- **Local**: Docker Compose for Postgres + ChromaDB; Node processes for API and Vite (this repo’s default workflow). See [Deployment profiles](docs/05_DEPLOYMENT_PROFILES.md) and [`infra/local/README.md`](infra/local/README.md).
+- **AWS (scaffold)**: [Fargate-oriented notes](docs/05_DEPLOYMENT_PROFILES.md) and a **Terraform** starting point under [`infra/aws/terraform/`](infra/aws/terraform/) (VPC, ALB, ECS/Fargate, RDS, Secrets Manager — adjust before production use).
 
 ## Documentation
 
-### Getting Started
-- [Setup & Configuration Guide](docs/00_SETUP.md) - Complete installation, environment, and OpenAI setup
+| Doc | Description |
+|-----|-------------|
+| [00_SETUP.md](docs/00_SETUP.md) | Install, `.env`, OpenAI, URLs, troubleshooting |
+| [01_DOCKER_WORKFLOW.md](docs/01_DOCKER_WORKFLOW.md) | Docker startup, health checks, cleanup |
+| [02_TESTING.md](docs/02_TESTING.md) | Jest/Vitest, coverage, CI-oriented notes |
+| [03_AI_AGENT_AND_TOOLS.md](docs/03_AI_AGENT_AND_TOOLS.md) | Agent tools, RAG vs agent, price bounds, semantics |
+| [04_QUERY_EXAMPLES.md](docs/04_QUERY_EXAMPLES.md) | Example prompts (UI + MCP-style usage) |
+| [05_DEPLOYMENT_PROFILES.md](docs/05_DEPLOYMENT_PROFILES.md) | Local vs AWS Fargate, Bedrock notes, checklist |
+| [mcp/README.md](mcp/README.md) | Cursor / Claude MCP server (Python, Chroma + OpenAI) |
 
-### Docker & Infrastructure
-- [Docker Workflow Guide](docs/01_DOCKER_WORKFLOW.md) - Automated startup & health checks
+**Index:** [docs/DOCUMENTATION_STRUCTURE.md](docs/DOCUMENTATION_STRUCTURE.md)
 
-### Testing
-- [Testing Guide](docs/02_TESTING.md) - Complete testing documentation with 66 tests (100% pass rate), examples, and best practices
-
-### Archive
-Historical implementation notes and changelogs can be found in [docs/archive/](docs/archive/)
+**Archive:** [docs/archive/](docs/archive/) — historical implementation notes
 
 ## Contributing
 

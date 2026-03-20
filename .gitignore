@@ -1,6 +1,7 @@
 node_modules
 .env
 .DS_Store
+frontend/coverage
 # Keep generated diagrams
 !docs/images/*.png
 !docs/images/*.svg

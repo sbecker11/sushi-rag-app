@@ -31,6 +31,34 @@ terraform init
 terraform plan
 ```
 
+## Makefile Workflow (Recommended)
+
+This scaffold includes a `Makefile` with environment-aware commands.
+
+```bash
+cd infra/aws/terraform
+mkdir -p env
+cp terraform.tfvars.example env/dev.tfvars
+
+make init
+make fmt
+make validate
+make plan ENV=dev
+make apply ENV=dev
+```
+
+Destroy:
+
+```bash
+make destroy ENV=dev
+```
+
+Defaults used by Makefile:
+
+- `ENV=dev`
+- `TFVARS_FILE=env/<ENV>.tfvars`
+- `PLAN_FILE=plan-<ENV>.tfplan`
+
 ### Security note
 
 This scaffold stores secret values via Terraform-managed `aws_secretsmanager_secret_version`.

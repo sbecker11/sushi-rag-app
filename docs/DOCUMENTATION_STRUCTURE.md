@@ -22,6 +22,9 @@ Clean, consecutive numbering for user-facing documentation:
 ### 05: Deployment Profiles
 - **05_DEPLOYMENT_PROFILES.md** - Local Docker and AWS Fargate profile strategy with migration checklist
 
+### MCP (in-repo)
+- **`mcp/README.md`** (repository root) - Python MCP server for Cursor / Claude Desktop; uses the same ChromaDB stack as the app (`CHROMA_HOST` / `CHROMA_PORT` / `CHROMA_COLLECTION`)
+
 ---
 
 ## Archive (docs/archive/)
@@ -46,7 +49,7 @@ See [docs/archive/README.md](docs/archive/README.md) for details on why these we
 
 ## Benefits of This Structure
 
-✅ **Clean numbering**: 00-05 consecutive sequence  
+✅ **Clean numbering**: 00-05 consecutive sequence (+ `mcp/README.md` for MCP tooling)  
 ✅ **Easy navigation**: Logical grouping by topic  
 ✅ **Reduced clutter**: Historical docs separated  
 ✅ **Maintainable**: New docs can be added without gaps  
@@ -55,4 +58,4 @@ See [docs/archive/README.md](docs/archive/README.md) for details on why these we
 
 ---
 
-*Last updated: March 19, 2026*
+*Last updated: February 2, 2026*

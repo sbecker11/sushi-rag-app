@@ -1,4 +1,4 @@
-import { expect, afterEach } from 'vitest';
+import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
@@ -18,4 +18,7 @@ Object.defineProperty(import.meta, 'env', {
   },
   writable: true
 });
+
+// jsdom: Element.prototype.scrollIntoView is missing
+Element.prototype.scrollIntoView = vi.fn();
 

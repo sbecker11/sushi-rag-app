@@ -3,7 +3,7 @@
 Use these prompts in either:
 
 - the `sushi-rag-app` frontend assistant chat
-- Cursor chat with `user-sushi-rag-mcp-server` tools
+- Cursor chat with your configured MCP server tools (server name varies; code lives in repo **`mcp/`**)
 
 ---
 
@@ -53,10 +53,12 @@ Use these prompts in either:
 
 ## MCP Tool-Oriented Examples
 
-These are helpful when you want to be explicit in Cursor chat:
+These are helpful when you want to be explicit in Cursor chat (replace `YOUR_MCP_SERVER` with the name shown under **Tools & MCP**, e.g. `sushi-rag-mcp` or `user-sushi-rag-mcp-server`):
 
-- `use user-sushi-rag-mcp-server sushi_list_topics with limit 20`
-- `use user-sushi-rag-mcp-server sushi_semantic_search with query 'spicy maki rolls' and k 10`
-- `use user-sushi-rag-mcp-server sushi_semantic_search with query 'vegan appetizers' and k 8`
-- `use user-sushi-rag-mcp-server sushi_rag_query with question 'Build me a budget-friendly sushi dinner under $20'`
+- `use YOUR_MCP_SERVER sushi_list_topics with limit 20`
+- `use YOUR_MCP_SERVER sushi_semantic_search with query 'spicy maki rolls' and k 10`
+- `use YOUR_MCP_SERVER sushi_semantic_search with query 'vegan appetizers' and k 8`
+- `use YOUR_MCP_SERVER sushi_rag_query with question 'Build me a budget-friendly sushi dinner under $20'`
+
+See [`mcp/README.md`](../mcp/README.md) for install and Cursor config.
 

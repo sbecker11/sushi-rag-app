@@ -10,6 +10,7 @@
     "test:frontend": "cd frontend && npm test",
     "test:watch": "concurrently \"cd backend && npm run test:watch\" \"cd frontend && npm run test:watch\"",
     "test:coverage": "npm run test:backend:coverage && npm run test:frontend:coverage",
+    "test:mcp": "bash scripts/test-mcp.sh -q",
     "test:backend:coverage": "cd backend && npm run test:coverage",
     "test:frontend:coverage": "cd frontend && npm run test:coverage",
     "test:openai": "node scripts/test-openai.js",

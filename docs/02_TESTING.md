@@ -72,9 +72,22 @@ npm run test:backend
 # Frontend tests only
 npm run test:frontend
 
+# MCP (Python) tests — creates `mcp/.venv` with Python 3.11/3.12 when needed
+npm run test:mcp
+
 # Watch mode (auto-rerun on changes)
 npm run test:watch
 ```
+
+### MCP server (`mcp/`)
+
+- **Runner**: Pytest + `pytest-asyncio` (see `mcp/requirements-dev.txt`).
+- **Layout**:
+  - `mcp/constraints.py` — constraint parsing/filtering (shared with `server.py`).
+  - `mcp/tests/test_constraints.py` — pure unit tests (no Chroma).
+  - `mcp/tests/test_server_helpers.py` — `_format_docs`, `_handle_error`, `_format_sources`.
+  - `mcp/tests/test_tools.py` — async tools with a **mocked** vector store (no Docker).
+- **Manual run**: `bash scripts/test-mcp.sh` or `cd mcp && .venv/bin/python -m pytest tests/` after `pip install -r requirements-dev.txt`.
 
 ### From Individual Directories
 

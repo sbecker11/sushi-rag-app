@@ -473,24 +473,27 @@ docker rm -f sushi-rag-app-chromadb
 
 **Problem:** MCP tools disappear, only some tools show up, or a tool says "not found".
 
+**Setup:** The MCP server lives in this repo at **`mcp/`** — see [`mcp/README.md`](../mcp/README.md) for venv, `mcp/.env`, and how to run `server.py`.
+
 **Solution:**
 1. Open Cursor **Tools & MCP**
-2. Restart/toggle `user-sushi-rag-mcp-server`
+2. Restart/toggle your configured MCP server (name depends on your Cursor config, e.g. `sushi-rag-mcp` or `user-sushi-rag-mcp-server`)
 3. Wait until status is green
-4. Re-run the MCP command
+4. Use **Refresh capabilities** if your client offers it
+5. Re-run the MCP tool call
 
-If still stale, reload Cursor window and re-open Tools & MCP.
+If still stale, reload the Cursor window and re-open Tools & MCP.
 
 ### MCP Uses Old OpenAI API Key
 
-**Problem:** MCP requests return 401 with an old key suffix even after updating app `.env`.
+**Problem:** MCP requests return 401 with an old key suffix even after updating the app’s root `.env`.
 
-**Cause:** MCP server may use its own env config (`mcp.json` or MCP-specific `.env`) instead of app `.env`.
+**Cause:** The MCP process loads **`mcp/.env`** (same folder as `server.py`) and/or env vars from your Cursor MCP server entry — not the root `.env` automatically.
 
 **Solution:**
-- Update the key in MCP server config/env used by `sushi-rag-mcp-server`
-- Restart MCP server from Tools & MCP
-- Retry MCP query
+- Set `OPENAI_API_KEY` in `mcp/.env` (copy from `mcp/env.example`) **or** pass it in the MCP client config `env` block
+- Restart the MCP server from Tools & MCP
+- Retry the query
 
 ### JSON Parsing Error During Menu Generation
 

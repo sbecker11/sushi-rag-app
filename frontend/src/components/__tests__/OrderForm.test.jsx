@@ -295,7 +295,12 @@ describe('OrderForm Component', () => {
 
   describe('Form Submission State', () => {
     test('should show loading state during submission', async () => {
-      mockOnSubmit.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      let resolveSubmit;
+      mockOnSubmit.mockImplementation(
+        () => new Promise((resolve) => {
+          resolveSubmit = resolve;
+        })
+      );
       render(<OrderForm {...defaultProps} />);
 
       // Fill all fields with valid data
@@ -313,6 +318,8 @@ describe('OrderForm Component', () => {
       // Check that processing text appears in the button
       const processingButton = await screen.findByRole('button', { name: /processing/i });
       expect(processingButton).toBeDisabled();
+
+      resolveSubmit();
     });
 
     test('should disable button when fields are invalid', async () => {
