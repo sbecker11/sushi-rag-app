@@ -293,9 +293,9 @@ PORT=3001
 
 # PostgreSQL Docker Container Configuration
 POSTGRES_CONTAINER=sushi-rag-app-postgres
-POSTGRES_USER=sushi_rag_user
-POSTGRES_PASSWORD=sushi_rag_password
-POSTGRES_DB=sushi_rag_orders
+POSTGRES_USER=sushi_rag_app_user
+POSTGRES_PASSWORD=sushi_rag_app_password
+POSTGRES_DB=sushi_rag_app_orders
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
