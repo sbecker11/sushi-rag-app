@@ -1,5 +1,7 @@
 # Sushi RAG App 🍣
 
+<a href="https://raw.githubusercontent.com/sbecker11/sushi-rag-app/main/docs/images/rag-architecture-dark.png" target="_blank" rel="noopener noreferrer"><img src="docs/images/0-pre-order.png" width="250" alt="Sushi RAG App menu (click for the RAG architecture diagram)"></a>
+
 A modern food ordering web application with AI-powered menu assistance, featuring React frontend, Node.js backend, and PostgreSQL database.
 
 ## Features
