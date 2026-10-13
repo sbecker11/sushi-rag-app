@@ -1,5 +1,11 @@
 # Sushi RAG App 🍣
 
+<!-- SUMMARY:START generated from workspace-linkedin-profile/Projects.json by scripts/build_readme_header.py; edit there -->
+FastMCP + LangChain LCEL RAG MCP server with ChromaDB, PostgreSQL, and a React frontend, exposing three MCP tools.
+
+**Skills:** LangChain · LangChain LCEL · FastMCP · Model Context Protocol (MCP) · Retrieval-Augmented Generation (RAG) · ChromaDB · OpenAI GPT-4 · OpenAI Embeddings · Python (Programming Language) · PostgreSQL · React · Vite · Tailwind CSS · Node.js · Express.js · Full-Stack Development · Docker · Docker Compose · Terraform · AWS ECS Fargate · Jest · Vitest · pytest · Automated Software Testing (JUnit/Jest/Vitest/PyTest)
+<!-- SUMMARY:END -->
+
 <a href="https://raw.githubusercontent.com/sbecker11/sushi-rag-app/main/docs/images/rag-architecture-dark.png" target="_blank" rel="noopener noreferrer"><img src="docs/images/0-pre-order.png" width="250" alt="Sushi RAG App menu (click for the RAG architecture diagram)"></a>
 
 A modern food ordering web application with AI-powered menu assistance, featuring React frontend, Node.js backend, and PostgreSQL database.
